@@ -51,7 +51,7 @@ RUN apt-get update &&\
     apt-get install libcurl3-gnutls libgcc-s1 libgmp10 libjsoncpp24 \
         libleveldb1d liblua5.1-0 libluajit-5.1-2 libncursesw6 libpq5 \
         libspatialindex6 libsqlite3-0 libstdc++6 libtinfo6 zlib1g \
-        adduser -yq &&\
+        adduser git -yq &&\
     apt-get clean
 RUN adduser --system --uid 30000 --group --home /var/lib/minetest minetest &&\
     chown -R minetest:minetest /var/lib/minetest
