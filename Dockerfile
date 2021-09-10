@@ -20,6 +20,10 @@ RUN mkdir -p /usr/src &&\
     git clone --depth=1 -b ${MINETEST_VERSION} \
         https://github.com/ronoaldo/minetest.git /usr/src/minetest &&\
     rm -rf /usr/src/minetest/.git
+RUN git clone --depth=1 -b ${MINETEST_VERSION} \
+        https://github.com/ronoaldo/minetest_game.git \
+        /usr/src/minetest/games/minetest_game &&\
+    rm -rf /usr/src/minetest/games/minetest_game/.git
 
 # Build server
 WORKDIR /tmp/build
@@ -34,12 +38,6 @@ RUN cmake /usr/src/minetest \
         -DVERSION_EXTRA=ronoaldo &&\
     make -j$(nproc) &&\
     make install
-
-# Install MTG
-RUN git clone --depth=1 -b ${MINETEST_VERSION} \
-        https://github.com/ronoaldo/minetest_game.git \
-        /usr/src/minetest/games/minetest_game &&\
-    rm -rf /usr/src/minetest/games/minetest_game/.git
 
 # Install Contentdb CLI
 RUN curl -SsL --fail \
