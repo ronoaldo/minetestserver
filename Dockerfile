@@ -2,7 +2,7 @@
 FROM debian:bullseye AS builder
 
 # Build-time arguments
-ARG MINETEST_VERSION=master
+ARG MINETEST_VERSION=5.4.1
 ARG MINETOOLS_VERSION=v0.1.4
 
 # Install all build-dependencies
