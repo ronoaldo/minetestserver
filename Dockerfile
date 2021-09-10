@@ -53,13 +53,14 @@ RUN apt-get update &&\
         libspatialindex6 libsqlite3-0 libstdc++6 libtinfo6 zlib1g \
         adduser -yq &&\
     apt-get clean
-RUN adduser --system --uid 1000 --group --home /var/lib/minetest minetest &&\
+RUN adduser --system --uid 30000 --group --home /var/lib/minetest minetest &&\
     chown -R minetest:minetest /var/lib/minetest
 
 # Copy files and folders
-COPY --from=builder /usr/share/minetest /usr/share/minetest
-COPY --from=builder /usr/bin/minetestserver /usr/bin
 COPY --from=builder /usr/share/doc/minetest/minetest.conf.example /etc/minetest/minetest.conf
+COPY --from=builder /usr/share/minetest     /usr/share/minetest
+COPY --from=builder /usr/bin/minetestserver /usr/bin
+COPY --from=builder /usr/bin/contentdb      /usr/bin
 ADD minetest-wrapper.sh /usr/bin
 
 WORKDIR /var/lib/minetest
