@@ -3,7 +3,7 @@ FROM debian:bullseye AS builder
 
 # Build-time arguments
 ARG MINETEST_VERSION=5.4.1
-ARG MINETOOLS_VERSION=v0.1.7
+ARG MINETOOLS_VERSION=v0.1.8
 
 # Install all build-dependencies
 RUN apt-get update &&\
