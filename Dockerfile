@@ -3,6 +3,7 @@ FROM debian:bullseye AS builder
 
 # Build-time arguments
 ARG MINETEST_VERSION=master
+ARG MINETEST_GAME_VERSION=master
 ARG MINETOOLS_VERSION=v0.2.0
 
 # Install all build-dependencies
@@ -20,7 +21,7 @@ RUN mkdir -p /usr/src &&\
     git clone --depth=1 -b ${MINETEST_VERSION} \
         https://github.com/ronoaldo/minetest.git /usr/src/minetest &&\
     rm -rf /usr/src/minetest/.git
-RUN git clone --depth=1 -b ${MINETEST_VERSION} \
+RUN git clone --depth=1 -b ${MINETEST_GAME_VERSION} \
         https://github.com/ronoaldo/minetest_game.git \
         /usr/src/minetest/games/minetest_game &&\
     rm -rf /usr/src/minetest/games/minetest_game/.git
