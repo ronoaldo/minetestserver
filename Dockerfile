@@ -3,7 +3,8 @@ FROM debian:bullseye AS builder
 
 # Build-time arguments
 ARG MINETEST_VERSION=master
-ARG MINETOOLS_VERSION=v0.1.4
+ARG MINETEST_GAME_VERSION=master
+ARG MINETOOLS_VERSION=v0.2.0
 
 # Install all build-dependencies
 RUN apt-get update &&\
@@ -11,7 +12,7 @@ RUN apt-get update &&\
         libfreetype6-dev libglu1-mesa-dev libgmp-dev libirrlicht-dev \
         libjpeg-dev libjsoncpp-dev libleveldb-dev libluajit-5.1-dev \
         libogg-dev libopenal-dev libpng-dev libpq-dev libspatialindex-dev \
-        libsqlite3-dev libvorbis-dev libx11-dev libxxf86vm-dev \
+        libsqlite3-dev libvorbis-dev libx11-dev libxxf86vm-dev libzstd-dev \
         postgresql-server-dev-all zlib1g-dev git unzip -yq &&\
     apt-get clean
 
@@ -20,7 +21,7 @@ RUN mkdir -p /usr/src &&\
     git clone --depth=1 -b ${MINETEST_VERSION} \
         https://github.com/ronoaldo/minetest.git /usr/src/minetest &&\
     rm -rf /usr/src/minetest/.git
-RUN git clone --depth=1 -b ${MINETEST_VERSION} \
+RUN git clone --depth=1 -b ${MINETEST_GAME_VERSION} \
         https://github.com/ronoaldo/minetest_game.git \
         /usr/src/minetest/games/minetest_game &&\
     rm -rf /usr/src/minetest/games/minetest_game/.git
@@ -31,7 +32,7 @@ RUN cmake /usr/src/minetest \
         -DENABLE_POSTGRESQL=TRUE \
         -DPostgreSQL_TYPE_INCLUDE_DIR=/usr/include/postgresql \
         -DCMAKE_INSTALL_PREFIX=/usr \
-        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_BUILD_TYPE=Debug \
         -DBUILD_SERVER=TRUE \
         -DBUILD_CLIENT=FALSE \
         -DBUILD_UNITTESTS=FALSE \
@@ -50,7 +51,7 @@ FROM debian:bullseye AS runtime
 RUN apt-get update &&\
     apt-get install libcurl3-gnutls libgcc-s1 libgmp10 libjsoncpp24 \
         libleveldb1d liblua5.1-0 libluajit-5.1-2 libncursesw6 libpq5 \
-        libspatialindex6 libsqlite3-0 libstdc++6 libtinfo6 zlib1g \
+        libspatialindex6 libsqlite3-0 libstdc++6 libtinfo6 zlib1g libzstd1 \
         adduser git -yq &&\
     apt-get clean
 RUN adduser --system --uid 30000 --group --home /var/lib/minetest minetest &&\
