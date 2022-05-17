@@ -1,15 +1,35 @@
 # Minetest Server for Docker Hosting
 
 This is a docker image designed to host [Minetest](https://www.minetest.net)
-game servers using Docker images.
+game servers using Docker.
 
 This is based on Debian Stable (for security patches from upstream), and has
 some helper scripts/tools for making building your server easier.
 
+The images can be used on both `linux/amd64` and `linux/arm64` architectures.
+This means that you can use this for hosting your server as a docker container
+running on Raspberry Pi!
+
+## Why?
+
+The goal of this image is to make the Minetest code, the Game code and all
+installed Mods code a single immutable image. That is why we bundle some tools
+to help with that. This helps to make each image reproducible snapshot of your
+server code, while also trying to isolate as much as possible from the world
+data volume.
+
+The recommended way to use this image is to create a `Dockerfile` and add your
+custom elements there. Build your image with `docker build` and execute it with
+`docker run`. This aproach provides an extra level of protection, since mod
+code is always read-only from the running `minetestserver` proccess.
+
+Refer to the [sample](./sample/) server as well as the following instructions on
+how to setup your custom server with Docker using this base image.
+
 ## Included tools
 
 * **contentdb**: this is a small command line interface made to help installing/
-  upgrading mods from the command-line.
+  updating mods from ContentDB, the curated mod repository for Minetest.
 * **git**: several mods are available as Git repositories only, so git is bundled
   with the base image to help building the server images.
 
@@ -17,7 +37,7 @@ some helper scripts/tools for making building your server easier.
 
 You can start building your server easily with the following `Dockerfile`:
 
-    FROM ghcr.io/ronoaldo/minetestserver:stable-5
+    FROM ghcr.io/ronoaldo/minetestserver:stable
     
     USER root
     RUN cd /usr/share/minetest &&\
@@ -63,7 +83,7 @@ again.
 
 The default container command launches the server with a basic configuration,
 provided by the Minetest distribution, and placed at
-`/etc/minetest/minetest.conf`.
+`/etc/minetest/minetest.conf` inside the final image.
 
 One easy way to start changing it is to copy the file from the container:
 
@@ -80,7 +100,10 @@ to this file or make world backups. To fix that, try this:
     sudo chgrp -R $(id -g) ./data
     sudo chmod -R g+rw ./data
 
-Finally, just launch you server with the new settings!
+The final step is to launch you server with the new settings. We provide a
+convenient [wrapper](./minetest-wrapper.sh) to restart your server automatically
+if it crashes. So, to change the settings, you can then launch the container
+like this:
 
     docker run -it \
         -p 30000:30000/udp -p 30000:30000/tcp \
