@@ -41,7 +41,7 @@ jobs:
       - name: Extract Minetest version/branch
         id: minetest-version
         run: |
-          export MINETEST_VERSION="$(grep MINETEST_VERSION= Dockerfile.stable-5 | cut -f 2 -d=)"
+          export MINETEST_VERSION="$(grep MINETEST_VERSION= ${{ matrix.dockerfile }} | cut -f 2 -d=)"
           echo "::set-output name=version::${MINETEST_VERSION}"
 
       - name: Extract metadata (tags, labels) for Docker
