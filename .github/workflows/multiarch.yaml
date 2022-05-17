@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |-
           echo "DOCKER_TAGS=<<EOF" >> $GITHUB_ENV
-          echo "${{ matrix.tags }}"" >> $GITHUB_ENV
+          echo "${{ matrix.tags }}" >> $GITHUB_ENV
           echo "${{ env.IMAGE }}:$(grep MINETEST_VERSION= Dockerfile.stable-5 | cut -f 2 -d=)" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
