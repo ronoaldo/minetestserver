@@ -6,6 +6,7 @@ on:
       - 'main'
       - 'stable-5'
       - '**issue**'
+      - 'ronoaldo/**'
 
 env:
   REGISTRY: ghcr.io
@@ -86,7 +87,7 @@ jobs:
         with:
           context: .
           file: ${{ matrix.dockerfile }}
-          args: ${{ matrix.args }}
+          build-args: ${{ matrix.args }}
           platforms: ${{ matrix.platforms }}
           push: ${{ github.ref_name == 'main' }}
           tags: ${{ steps.meta.outputs.tags }}
