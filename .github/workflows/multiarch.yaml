@@ -19,10 +19,16 @@ jobs:
       matrix:
         include:
           - dockerfile: Dockerfile
+            tags: |-
+              unstable
+              dev
             platforms: |-
               linux/amd64
               linux/arm64
           - dockerfile: Dockerfile.stable-5
+            tags: |-
+              stable-5
+              stable
             platforms: |-
               linux/amd64
               linux/arm64
@@ -61,5 +67,5 @@ jobs:
           file: ${{ matrix.dockerfile }}
           platforms: ${{ matrix.platforms }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ matrix.tags }}
           labels: ${{ steps.meta.outputs.labels }}
