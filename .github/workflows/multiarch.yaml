@@ -20,15 +20,15 @@ jobs:
         include:
           - dockerfile: Dockerfile
             tags: |-
-              ghcr.io/ronoaldo/minetestserver:unstable
-              ghcr.io/ronoaldo/minetestserver:dev
+              unstable
+              dev
             platforms: |-
               linux/amd64
               linux/arm64
           - dockerfile: Dockerfile.stable-5
             tags: |-
-              ghcr.io/ronoaldo/minetestserver:stable
-              ghcr.io/ronoaldo/minetestserver:stable-5
+              stable
+              stable-5
             platforms: |-
               linux/amd64
               linux/arm64
@@ -38,6 +38,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Extract Minetest version/branch
+        id: minetest-version
+        run: |
+          export MINETEST_VERSION="$(grep MINETEST_VERSION= Dockerfile.stable-5 | cut -f 2 -d=)"
+          echo "::set-output name=version::${MINETEST_VERSION}"
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v3.5.0
@@ -46,22 +52,14 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=tag
-      
-      - name: Final set of tags from Dockerfile
-        id: build-tags
-        shell: bash
-        run: |-
-          echo "DOCKER_TAGS=<<EOF" >> $GITHUB_ENV
-          echo "${{ matrix.tags }}" >> $GITHUB_ENV
-          echo "${{ env.IMAGE }}:$(grep MINETEST_VERSION= Dockerfile.stable-5 | cut -f 2 -d=)" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+            ${{ steps.minetest-version.outputs.version }}
+            ${{ matrix.tags }}
 
       - name: Check build tags
         id: build-tags-check
         shell: bash
-        run: |-
-          echo -n -e "${{ env.DOCKER_TAGS }}"
-          echo -n -e "${DOCKER_TAGS}"
+        run: |
+          echo ${{ steps.meta.outputs.tags }}
 
       - name: Set up QEMU for multiarch builds
         uses: docker/setup-qemu-action@v1
@@ -84,5 +82,5 @@ jobs:
       #     file: ${{ matrix.dockerfile }}
       #     platforms: ${{ matrix.platforms }}
       #     push: ${{ github.ref_name == 'main' }}
-      #     tags: ${{ matrix.tags }}
+      #     tags: ${{ steps.meta.outputs.tags }}
       #     labels: ${{ steps.meta.outputs.labels }}
