@@ -50,8 +50,6 @@ jobs:
         with:
           images: ${{ env.IMAGE }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=tag
             ${{ steps.minetest-version.outputs.version }}
             ${{ matrix.tags }}
 
@@ -59,7 +57,7 @@ jobs:
         id: build-tags-check
         shell: bash
         run: |
-          echo ${{ steps.meta.outputs.tags }}
+          echo "${{ steps.meta.outputs.tags }}"
 
       - name: Set up QEMU for multiarch builds
         uses: docker/setup-qemu-action@v1
