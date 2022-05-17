@@ -2,7 +2,10 @@ name: Multiarch build docker image
 
 on:
   push:
-    branches: ['stable-5', 'main', '*issue*']
+    branches:
+      - 'main'
+      - 'stable-5'
+      - '**issue**'
 
 env:
   REGISTRY: ghcr.io
