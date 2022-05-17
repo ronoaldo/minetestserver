@@ -20,15 +20,15 @@ jobs:
         include:
           - dockerfile: Dockerfile
             tags: |-
-              unstable
-              dev
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:unstable
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
             platforms: |-
               linux/amd64
               linux/arm64
           - dockerfile: Dockerfile.stable-5
             tags: |-
-              stable-5
-              stable
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable-5
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable
             platforms: |-
               linux/amd64
               linux/arm64
