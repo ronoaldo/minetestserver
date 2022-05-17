@@ -4,7 +4,7 @@ FROM debian:bullseye AS builder
 # Build-time arguments
 ARG MINETEST_VERSION=master
 ARG MINETEST_GAME_VERSION=master
-ARG MINETOOLS_VERSION=v0.2.0
+ARG MINETOOLS_VERSION=v0.2.2
 
 # Install all build-dependencies
 RUN apt-get update &&\
@@ -26,6 +26,18 @@ RUN git clone --depth=1 -b ${MINETEST_GAME_VERSION} \
         /usr/src/minetest/games/minetest_game &&\
     rm -rf /usr/src/minetest/games/minetest_game/.git
 
+# Install Contentdb CLI
+RUN echo "Building for arch $(uname -m)" &&\
+    case $(uname -m) in \
+        x86_64)  export ARCH=amd64 ;; \
+        aarch64) export ARCH=arm64 ;; \
+        *) echo "Unsupported arch $(uname -m)" ; exit 1 ;; \
+    esac &&\
+    curl -SsL --fail \
+        https://github.com/ronoaldo/minetools/releases/download/${MINETOOLS_VERSION}/contentdb-linux-${ARCH}.zip > /tmp/minetools.zip &&\
+        cd /tmp/ && unzip minetools.zip && mv dist/contentdb /usr/bin &&\
+        rm /tmp/minetools.zip
+
 # Build server
 WORKDIR /tmp/build
 RUN cmake /usr/src/minetest \
@@ -39,12 +51,6 @@ RUN cmake /usr/src/minetest \
         -DVERSION_EXTRA=ronoaldo &&\
     make -j$(nproc) &&\
     make install
-
-# Install Contentdb CLI
-RUN curl -SsL --fail \
-        https://github.com/ronoaldo/minetools/releases/download/${MINETOOLS_VERSION}/contentdb-linux-amd64.zip > /tmp/minetools.zip &&\
-        cd /tmp/ && unzip minetools.zip && mv dist/contentdb /usr/bin &&\
-        rm /tmp/minetools.zip
 
 # Bundle only the runtime dependencies
 FROM debian:bullseye AS runtime

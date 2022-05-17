@@ -19,13 +19,19 @@ jobs:
       matrix:
         include:
           - dockerfile: Dockerfile
+            args: |-
+              MINETEST_VERSION=master
+              MINETEST_GAME_VERSION=master
             tags: |-
               unstable
               dev
             platforms: |-
               linux/amd64
               linux/arm64
-          - dockerfile: Dockerfile.stable-5
+          - dockerfile: Dockerfile
+            args: |-
+              MINETEST_VERSION=5.5.1
+              MINETEST_GAME_VERSION=5.5.1
             tags: |-
               stable
               stable-5
@@ -38,10 +44,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Extract Minetest branch from Dockerfile
+      - name: Extract Minetest branch from Dockerfile/args
         id: minetest-version
         run: |
-          export MINETEST_VERSION="$(grep MINETEST_VERSION= ${{ matrix.dockerfile }} | cut -f 2 -d=)"
+          export MINETEST_VERSION="$(echo "${{ matrix.args[0] }}" | cut -f 2 -d=)"
           echo "::set-output name=version::${MINETEST_VERSION}"
 
       - name: Extract metadata (tags, labels) for Docker
@@ -74,10 +80,10 @@ jobs:
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
-        if: ${{ github.ref_name == 'main' || github.ref_name == 'stable-5' }}
         with:
           context: .
           file: ${{ matrix.dockerfile }}
+          args: ${{ matrix.args }}
           platforms: ${{ matrix.platforms }}
           push: ${{ github.ref_name == 'main' }}
           tags: ${{ steps.meta.outputs.tags }}
