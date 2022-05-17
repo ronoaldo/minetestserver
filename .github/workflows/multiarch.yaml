@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE: ghcr.io/ronoaldo/minetestserver
 
 jobs:
   multiarch-build:
@@ -20,15 +20,15 @@ jobs:
         include:
           - dockerfile: Dockerfile
             tags: |-
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:unstable
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
+              ghcr.io/ronoaldo/minetestserver:unstable
+              ghcr.io/ronoaldo/minetestserver:dev
             platforms: |-
               linux/amd64
               linux/arm64
           - dockerfile: Dockerfile.stable-5
             tags: |-
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable-5
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable
+              ghcr.io/ronoaldo/minetestserver:stable
+              ghcr.io/ronoaldo/minetestserver:stable-5
             platforms: |-
               linux/amd64
               linux/arm64
@@ -42,7 +42,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3.5.0
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.IMAGE }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag
