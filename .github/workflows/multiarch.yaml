@@ -2,7 +2,7 @@ name: Multiarch build docker image
 
 on:
   push:
-    branches: ['stable-5', 'main']
+    branches: ['stable-5', 'main', '*issue*']
 
 env:
   REGISTRY: ghcr.io
@@ -46,6 +46,22 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=tag
+      
+      - name: Final set of tags from Dockerfile
+        id: build-tags
+        shell: bash
+        run: |-
+          echo "DOCKER_TAGS=<<EOF" >> $GITHUB_ENV
+          echo "${{ matrix.tags }}"" >> $GITHUB_ENV
+          echo "${{ env.IMAGE }}:${{ grep MINETEST_VERSION= Dockerfile.stable-5 | cut -f 2 -d= }}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Check build tags
+        id: build-tags-check
+        shell: bash
+        run: |-
+          echo -n -e "${{ env.DOCKER_TAGS }}"
+          echo -n -e "${DOCKER_TAGS}"
 
       - name: Set up QEMU for multiarch builds
         uses: docker/setup-qemu-action@v1
@@ -62,10 +78,11 @@ jobs:
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
+        if: ${{ github.ref_name == 'main' || github.ref_name == 'stable-5' }}
         with:
           context: .
           file: ${{ matrix.dockerfile }}
           platforms: ${{ matrix.platforms }}
-          push: true
+          push: ${{ github.ref_name == 'main' }}
           tags: ${{ matrix.tags }}
           labels: ${{ steps.meta.outputs.labels }}
