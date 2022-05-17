@@ -50,7 +50,7 @@ jobs:
       - name: Extract Minetest branch from Dockerfile/args
         id: minetest-version
         run: |
-          export MINETEST_VERSION="$(echo "${{ matrix.args[0] }}" | cut -f 2 -d=)"
+          export MINETEST_VERSION="$(echo "${{ matrix.args }}" | grep MINETEST_VERSION | cut -f 2 -d=)"
           echo "::set-output name=version::${MINETEST_VERSION}"
 
       - name: Extract metadata (tags, labels) for Docker
