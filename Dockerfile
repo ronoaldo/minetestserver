@@ -5,12 +5,13 @@ FROM debian:bullseye AS builder
 ARG MINETEST_VERSION=master
 ARG MINETEST_GAME_VERSION=master
 ARG MINETOOLS_VERSION=v0.2.2
+ARG LUAJIT_VERSION=v2.1.0-beta4-mercurio
 
 # Install all build-dependencies
 RUN apt-get update &&\
     apt-get install build-essential cmake gettext libbz2-dev libcurl4-gnutls-dev \
         libfreetype6-dev libglu1-mesa-dev libgmp-dev libirrlicht-dev \
-        libjpeg-dev libjsoncpp-dev libleveldb-dev libluajit-5.1-dev \
+        libjpeg-dev libjsoncpp-dev libleveldb-dev \
         libogg-dev libopenal-dev libpng-dev libpq-dev libspatialindex-dev \
         libsqlite3-dev libvorbis-dev libx11-dev libxxf86vm-dev libzstd-dev \
         postgresql-server-dev-all zlib1g-dev git unzip -yq &&\
@@ -25,6 +26,9 @@ RUN git clone --depth=1 -b ${MINETEST_GAME_VERSION} \
         https://github.com/ronoaldo/minetest_game.git \
         /usr/src/minetest/games/minetest_game &&\
     rm -rf /usr/src/minetest/games/minetest_game/.git
+RUN git clone --depth=1 -b ${LUAJIT_VERSION} \
+        https://github.com/ronoaldo/LuaJIT.git /usr/src/luajit &&\
+    rm -rf /usr/src/luajit/.git
 
 # Install Contentdb CLI
 RUN echo "Building for arch $(uname -m)" &&\
@@ -37,6 +41,13 @@ RUN echo "Building for arch $(uname -m)" &&\
         https://github.com/ronoaldo/minetools/releases/download/${MINETOOLS_VERSION}/contentdb-linux-${ARCH}.zip > /tmp/minetools.zip &&\
         cd /tmp/ && unzip minetools.zip && mv dist/contentdb /usr/bin &&\
         rm /tmp/minetools.zip
+
+# Build LuaJIT
+WORKDIR /usr/src/luajit
+RUN sed -e 's/PREREL=.*/PREREL=-beta4-mercurio/g' -i Makefile
+RUN make PREFIX=/usr &&\
+    make install PREFIX=/usr &&\
+    make install PREFIX=/usr DESTDIR=/opt/luajit
 
 # Build server
 WORKDIR /tmp/build
@@ -56,7 +67,7 @@ RUN cmake /usr/src/minetest \
 FROM debian:bullseye AS runtime
 RUN apt-get update &&\
     apt-get install libcurl3-gnutls libgcc-s1 libgmp10 libjsoncpp24 \
-        libleveldb1d liblua5.1-0 libluajit-5.1-2 libncursesw6 libpq5 \
+        libleveldb1d libncursesw6 libpq5 \
         libspatialindex6 libsqlite3-0 libstdc++6 libtinfo6 zlib1g libzstd1 \
         adduser git -yq &&\
     apt-get clean
@@ -68,6 +79,7 @@ COPY --from=builder /usr/share/doc/minetest/minetest.conf.example /etc/minetest/
 COPY --from=builder /usr/share/minetest     /usr/share/minetest
 COPY --from=builder /usr/bin/minetestserver /usr/bin
 COPY --from=builder /usr/bin/contentdb      /usr/bin
+COPY --from=builder /opt/luajit/usr/        /usr/
 ADD minetest-wrapper.sh /usr/bin
 
 WORKDIR /var/lib/minetest
