@@ -27,6 +27,7 @@ jobs:
               MINETEST_VERSION=master
               MINETEST_GAME_VERSION=master
             tags: |-
+              5.6.0-rc1
               unstable
               dev
             platforms: |-
