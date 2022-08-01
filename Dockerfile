@@ -4,13 +4,16 @@ FROM debian:bullseye AS builder
 # Build-time arguments
 ARG MINETEST_VERSION=master
 ARG MINETEST_GAME_VERSION=master
+ARG MINETEST_IRRLICHT_VERSION=master
 ARG MINETOOLS_VERSION=v0.2.2
-ARG LUAJIT_VERSION=v2.1.0-beta4-mercurio
+# Using a specific and newer LuaJIT commit to fix several ARM issues
+# and crashes.
+ARG LUAJIT_VERSION=a7d0265480c662964988f83d4e245bf139eb7cc0
 
 # Install all build-dependencies
 RUN apt-get update &&\
     apt-get install build-essential cmake gettext libbz2-dev libcurl4-gnutls-dev \
-        libfreetype6-dev libglu1-mesa-dev libgmp-dev libirrlicht-dev \
+        libfreetype6-dev libglu1-mesa-dev libgmp-dev \
         libjpeg-dev libjsoncpp-dev libleveldb-dev \
         libogg-dev libopenal-dev libpng-dev libpq-dev libspatialindex-dev \
         libsqlite3-dev libvorbis-dev libx11-dev libxxf86vm-dev libzstd-dev \
@@ -20,15 +23,19 @@ RUN apt-get update &&\
 # Fetch source
 RUN mkdir -p /usr/src &&\
     git clone --depth=1 -b ${MINETEST_VERSION} \
-        https://github.com/ronoaldo/minetest.git /usr/src/minetest &&\
+        https://github.com/minetest/minetest.git \
+        /usr/src/minetest &&\
     rm -rf /usr/src/minetest/.git
 RUN git clone --depth=1 -b ${MINETEST_GAME_VERSION} \
-        https://github.com/ronoaldo/minetest_game.git \
-        /usr/src/minetest/games/minetest_game &&\
-    rm -rf /usr/src/minetest/games/minetest_game/.git
-RUN git clone --depth=1 -b ${LUAJIT_VERSION} \
-        https://github.com/ronoaldo/LuaJIT.git /usr/src/luajit &&\
-    rm -rf /usr/src/luajit/.git
+        https://github.com/minetest/minetest_game.git \
+        /usr/src/minetest/games/minetest_game
+RUN git clone --depth=1 -b ${MINETEST_IRRLICHT_VERSION} \
+        https://github.com/minetest/irrlicht \
+        /usr/src/minetest/lib/irrlichtmt
+RUN git clone \
+        https://github.com/LuaJIT/LuaJIT.git \
+        /usr/src/luajit &&\
+    git -C /usr/src/luajit checkout ${LUAJIT_VERSION}
 
 # Install Contentdb CLI
 RUN echo "Building for arch $(uname -m)" &&\
@@ -55,11 +62,11 @@ RUN cmake /usr/src/minetest \
         -DENABLE_POSTGRESQL=TRUE \
         -DPostgreSQL_TYPE_INCLUDE_DIR=/usr/include/postgresql \
         -DCMAKE_INSTALL_PREFIX=/usr \
-        -DCMAKE_BUILD_TYPE=Debug \
+        -DCMAKE_BUILD_TYPE=RelWithDebug \
         -DBUILD_SERVER=TRUE \
         -DBUILD_CLIENT=FALSE \
         -DBUILD_UNITTESTS=FALSE \
-        -DVERSION_EXTRA=ronoaldo &&\
+        -DVERSION_EXTRA=unofficial &&\
     make -j$(nproc) &&\
     make install
 
