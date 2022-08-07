@@ -2,9 +2,9 @@
 FROM debian:bullseye AS builder
 
 # Build-time arguments
-ARG MINETEST_VERSION=master
-ARG MINETEST_GAME_VERSION=master
-ARG MINETEST_IRRLICHT_VERSION=master
+ARG MINETEST_VERSION=5.6.0
+ARG MINETEST_GAME_VERSION=5.6.0
+ARG MINETEST_IRRLICHT_VERSION=1.9.0mt7
 ARG MINETOOLS_VERSION=v0.2.2
 # Using a specific and newer LuaJIT commit to fix several ARM issues
 # and crashes.
