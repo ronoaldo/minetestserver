@@ -36,9 +36,9 @@ jobs:
               linux/arm64
           - dockerfile: Dockerfile
             args: |-
-              MINETEST_VERSION=5.6.0
-              MINETEST_GAME_VERSION=5.6.0
-              MINETEST_IRRLICHT_VERSION=1.9.0mt7
+              MINETEST_VERSION=5.6.1
+              MINETEST_GAME_VERSION=5.6.1
+              MINETEST_IRRLICHT_VERSION=1.9.0mt8
             tags: |-
               stable
               stable-5
