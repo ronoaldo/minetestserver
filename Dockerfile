@@ -8,7 +8,7 @@ ARG MINETEST_IRRLICHT_VERSION=master
 ARG MINETOOLS_VERSION=v0.2.2
 # Using a specific and newer LuaJIT commit to fix several ARM issues
 # and crashes.
-ARG LUAJIT_VERSION=a7d0265480c662964988f83d4e245bf139eb7cc0
+ARG LUAJIT_VERSION=dad04f1754723e76ba9dcf9f401f3134a0cd3972
 
 # Install all build-dependencies
 RUN apt-get update &&\
