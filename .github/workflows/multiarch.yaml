@@ -28,7 +28,7 @@ jobs:
               MINETEST_GAME_VERSION=master
               MINETEST_IRRLICHT_VERSION=master
             tags: |-
-              5.7.0-dev
+              5.8.0-dev
               unstable
               dev
             platforms: |-
@@ -36,9 +36,9 @@ jobs:
               linux/arm64
           - dockerfile: Dockerfile
             args: |-
-              MINETEST_VERSION=5.6.1
-              MINETEST_GAME_VERSION=5.6.1
-              MINETEST_IRRLICHT_VERSION=1.9.0mt8
+              MINETEST_VERSION=5.7.0
+              MINETEST_GAME_VERSION=5.7.0
+              MINETEST_IRRLICHT_VERSION=1.9.0mt10
             tags: |-
               stable
               stable-5
