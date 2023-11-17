@@ -1,5 +1,5 @@
 # Build stage
-FROM debian:bookworm AS builder
+FROM debian:bullseye AS builder
 
 # Build-time arguments
 ARG MINETEST_VERSION=master
@@ -71,9 +71,9 @@ RUN cmake /usr/src/minetest \
     make install
 
 # Bundle only the runtime dependencies
-FROM debian:bookworm-slim AS runtime
+FROM debian:bullseye AS runtime
 RUN apt-get update &&\
-    apt-get install libcurl3-gnutls libgcc-s1 libgmp10 libjsoncpp25 \
+    apt-get install libcurl3-gnutls libgcc-s1 libgmp10 libjsoncpp24 \
         libleveldb1d libncursesw6 libpq5 \
         libspatialindex6 libsqlite3-0 libstdc++6 libtinfo6 zlib1g libzstd1 \
         adduser git -yq &&\

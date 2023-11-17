@@ -8,7 +8,6 @@ on:
       - '**issue**'
       - '**patch**'
       - 'ronoaldo/**'
-  pull_request:
 
 env:
   REGISTRY: ghcr.io
