@@ -1,4 +1,5 @@
-FROM ghcr.io/ronoaldo/minetestserver:stable-5
+#FROM ghcr.io/ronoaldo/minetestserver:stable-5
+FROM minetestserver:latest
 
 # Install mods from ContentDB
 WORKDIR /usr/share/minetest
