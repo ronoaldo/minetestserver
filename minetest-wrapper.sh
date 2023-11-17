@@ -17,4 +17,4 @@ while true ; do
 	echo "Restarting in 10s ..."
 	sleep 10
 done
-} >"${MINETEST_STDERR_FILE}" 2>"${MINETEST_STDERR_FILE}"
+} 2>&1 | tee -a "${MINETEST_STDERR_FILE}"

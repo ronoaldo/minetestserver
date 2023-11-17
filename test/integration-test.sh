@@ -50,8 +50,9 @@ if pushd "${TMPDIR}" ; then
     # shellcheck disable=2102
     cp -rv "${BASEDIR}"/test/testdata/.minetest "${TMPDIR}/data"
 
+    TEST_IMG="gcr.io/ronoaldo/myserver:testsrv"
     log "Building and starting test server ..."
-    docker build -t myserver:latest --build-arg BASE_IMAGE=${IMG} ./
+    docker build -t ${TEST_IMG} --build-arg BASE_IMAGE=${IMG} ./
 
     # 2. Prepare/fix the data dir
     mkdir -p data
@@ -59,14 +60,14 @@ if pushd "${TMPDIR}" ; then
     docker run ${IT} --rm \
         -v "$PWD:/server" \
         -u 0:0 \
-        myserver:latest bash -c 'chown -R minetest /server/data'
+        ${TEST_IMG} bash -c 'chown -R minetest /server/data'
 
     # 3. Run the server without the restart loop.
     # shellcheck disable=2086
     docker run ${IT} --rm \
         -v "$PWD/data:/var/lib/minetest" \
         -e NO_LOOP=true \
-        myserver:latest
+        ${TEST_IMG}
 
     popd || exit
 else

@@ -1,4 +1,4 @@
-gameid = minetesterror
+gameid = minetest
 
 load_mod_ethereal = true
 load_mod_3d_armor = true

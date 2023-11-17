@@ -4,10 +4,7 @@ on:
   push:
     branches:
       - 'main'
-      - 'stable-5'
-      - '**issue**'
-      - '**patch**'
-      - 'ronoaldo/**'
+  pull_request:
   workflow_dispatch:
 
 env:
