@@ -14,8 +14,10 @@ log() {
 }
 
 cleanup() {
-    log "Removing temporary directory ${TMPDIR}"
-    rm -rvf "${TMPDIR}"
+    if [ "${CLEANUP}" = "true" ]; then
+        log "Removing temporary directory ${TMPDIR}"
+        rm -rvf "${TMPDIR}"
+    fi
 }
 
 version_from_workflow() {
