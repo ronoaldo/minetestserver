@@ -74,6 +74,12 @@ jobs:
         run: |
           echo "${{ steps.meta.outputs.tags }}"
 
+      - name: Run a test build
+        id: run-test-build
+        shell: bash
+        run: |
+          ./test/integration-test.sh
+
       - name: Set up QEMU for multiarch builds
         uses: docker/setup-qemu-action@v1
 
