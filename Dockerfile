@@ -73,7 +73,7 @@ RUN cmake /usr/src/minetest \
 # Bundle only the runtime dependencies
 FROM debian:bookworm-slim AS runtime
 RUN apt-get update &&\
-    apt-get install libcurl3-gnutls libgcc-s1 libgmp10 libjsoncpp24 \
+    apt-get install libcurl3-gnutls libgcc-s1 libgmp10 libjsoncpp25 \
         libleveldb1d libncursesw6 libpq5 \
         libspatialindex6 libsqlite3-0 libstdc++6 libtinfo6 zlib1g libzstd1 \
         adduser git -yq &&\
