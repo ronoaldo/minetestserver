@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -x
 
 BASEDIR="$(readlink -f "$(dirname "$0")/..")"
 IMG="ghcr.io/ronoaldo/minetestserver:testing"
