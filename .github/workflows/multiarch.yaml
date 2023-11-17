@@ -71,7 +71,7 @@ jobs:
         run: |
           echo "${{ steps.meta.outputs.tags }}"
 
-      - name: Run a test build
+      - name: Run integration tests on Dockerfile
         id: run-test-build
         shell: bash
         run: |
