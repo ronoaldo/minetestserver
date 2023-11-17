@@ -48,17 +48,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Extract Minetest branch from Dockerfile/args
         id: minetest-version
         run: |
           export MINETEST_VERSION="$(echo "${{ matrix.args }}" | grep MINETEST_VERSION | cut -f 2 -d=)"
-          echo "::set-output name=version::${MINETEST_VERSION}"
+          echo "version=${MINETEST_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v3.5.0
+        uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE }}
           tags: |
@@ -78,20 +78,20 @@ jobs:
           ./test/integration-test.sh
 
       - name: Set up QEMU for multiarch builds
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to the Container registry
-        uses: docker/login-action@v1.10.0
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: ${{ matrix.dockerfile }}
