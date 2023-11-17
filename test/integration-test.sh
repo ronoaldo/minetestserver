@@ -15,6 +15,7 @@ log() {
 
 cleanup() {
     log "Removing temporary directory ${TMPDIR}"
+    rm -rvf "${TMPDIR}"
 }
 
 version_from_workflow() {
