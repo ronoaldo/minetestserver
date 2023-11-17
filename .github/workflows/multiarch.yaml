@@ -6,6 +6,7 @@ on:
       - 'main'
       - 'stable-5'
       - '**issue**'
+      - '**patch**'
       - 'ronoaldo/**'
 
 env:
