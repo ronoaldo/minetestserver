@@ -17,7 +17,7 @@ RUN apt-get update &&\
         libjpeg-dev libjsoncpp-dev libleveldb-dev \
         libogg-dev libopenal-dev libpng-dev libpq-dev libspatialindex-dev \
         libsqlite3-dev libvorbis-dev libx11-dev libxxf86vm-dev libzstd-dev \
-        postgresql-server-dev-all zlib1g-dev git unzip -yq &&\
+        postgresql-server-dev-all zlib1g-dev git unzip ninja-build -yq &&\
     apt-get clean
 
 # Fetch source
@@ -58,7 +58,7 @@ RUN make PREFIX=/usr &&\
 
 # Build server
 WORKDIR /tmp/build
-RUN cmake /usr/src/minetest \
+RUN cmake -G Ninja /usr/src/minetest \
         -DENABLE_POSTGRESQL=TRUE \
         -DPostgreSQL_TYPE_INCLUDE_DIR=/usr/include/postgresql \
         -DCMAKE_INSTALL_PREFIX=/usr \
@@ -67,8 +67,8 @@ RUN cmake /usr/src/minetest \
         -DBUILD_CLIENT=FALSE \
         -DBUILD_UNITTESTS=FALSE \
         -DVERSION_EXTRA=unofficial &&\
-    make -j$(nproc) &&\
-    make install
+    ninja -j$(nproc) &&\
+    ninja install
 
 # Bundle only the runtime dependencies
 FROM debian:bookworm-slim AS runtime
