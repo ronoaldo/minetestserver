@@ -1,4 +1,6 @@
-FROM ghcr.io/ronoaldo/minetestserver:stable-5
+# Use the default stable 5.x version
+ARG BASE_IMAGE=ghcr.io/ronoaldo/minetestserver:stable-5
+FROM ${BASE_IMAGE}
 
 # Install mods from ContentDB
 WORKDIR /usr/share/minetest
