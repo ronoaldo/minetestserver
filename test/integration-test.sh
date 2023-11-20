@@ -2,6 +2,8 @@
 set -e
 set -x
 
+export MINETEST_VERSION MINETEST_GAME_VERSION IRRLICHT_VERSION
+
 BASEDIR="$(readlink -f "$(dirname "$0")/..")"
 IMG="ghcr.io/ronoaldo/minetestserver:testing"
 TMPDIR="$(mktemp -d)"
@@ -14,6 +16,8 @@ log() {
 }
 
 cleanup() {
+    RET=$?
+    log "Exiting with ${RET} status..."
     if [ "${CLEANUP}" = "true" ]; then
         log "Removing temporary directory ${TMPDIR}"
         rm -rvf "${TMPDIR}"
@@ -21,12 +25,28 @@ cleanup() {
 }
 
 version_from_workflow() {
-    # TODO(ronoaldo): proper YAML parser to avoid breaking
-    grep "$1"= "${BASEDIR}/.github/workflows/multiarch.yaml" | grep -v export | tail -n 1 | cut -f 2 -d=
+    # If the variable is defined already, use it
+    if [ "${!1}" != "" ]; then
+        echo -n "${!1}"
+        return
+    fi
+    # Else, check if the variable can be parsed from YAML, returning the first value
+    # configured by the workflow file.
+    yq -r '.jobs["multiarch-build"].strategy.matrix.include[].args' < .github/workflows/multiarch.yaml |\
+        grep "$1"= | tail -n 1 | cut -f 2 -d=
+}
+
+install_deps() {
+    yq --version 2>/dev/null >/dev/null || {
+        sudo apt-get install -yq yq
+    }
 }
 
 log "Starting an integration test using IMG=${IMG}"
 trap 'cleanup' EXIT
+
+log "Installing required dependencies ..."
+install_deps
 
 log "Detecting versions from workflow ..."
 MT="$(version_from_workflow MINETEST_VERSION)"
@@ -64,6 +84,8 @@ if pushd "${TMPDIR}" ; then
         -v "$PWD:/server" \
         -u 0:0 \
         ${TEST_IMG} bash -c 'chown -R minetest /server/data'
+    
+    docker run --rm ${TEST_IMG} minetestserver --gameid list
 
     # 3. Run the server without the restart loop.
     # shellcheck disable=2086

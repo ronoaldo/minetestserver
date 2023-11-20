@@ -54,7 +54,11 @@ jobs:
         id: minetest-version
         run: |
           export MINETEST_VERSION="$(echo "${{ matrix.args }}" | grep MINETEST_VERSION | cut -f 2 -d=)"
+          export MINETEST_GAME_VERSION="$(echo "${{ matrix.args }}" | grep MINETEST_GAME_VERSION | cut -f 2 -d=)"
+          export IRRLICHT_VERSION="$(echo "${{ matrix.args }}" | grep IRRLICHT_VERSION | cut -f 2 -d=)"
           echo "version=${MINETEST_VERSION}" >> $GITHUB_OUTPUT
+          echo "game=${MINETEST_GAME_VERSION}" >> $GITHUB_OUTPUT
+          echo "irrlicht=${IRRLICHT_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -75,6 +79,9 @@ jobs:
         id: run-test-build
         shell: bash
         run: |
+          MINETEST_VERSION=${{steps.minetest-version.outputs.version}} \
+          MINETEST_GAME_VERSION=${{steps.minetest-version.outputs.game}} \
+          MINETEST_IRRLICHT_VERSION=${{steps.minetest-version.outputs.irrlicht}} \
           ./test/integration-test.sh
 
       - name: Set up QEMU for multiarch builds

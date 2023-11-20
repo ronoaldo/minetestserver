@@ -84,6 +84,7 @@ RUN adduser --system --uid 30000 --group --home /var/lib/minetest minetest &&\
 # Copy files and folders
 COPY --from=builder /usr/share/doc/minetest/minetest.conf.example /etc/minetest/minetest.conf
 COPY --from=builder /usr/share/minetest     /usr/share/minetest
+COPY --from=builder /usr/src/minetest/games /usr/share/minetest/games
 COPY --from=builder /usr/bin/minetestserver /usr/bin
 COPY --from=builder /usr/bin/contentdb      /usr/bin
 COPY --from=builder /opt/luajit/usr/        /usr/
