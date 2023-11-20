@@ -32,16 +32,6 @@ jobs:
               dev
             platforms: |-
               linux/amd64
-          - dockerfile: Dockerfile
-            args: |-
-              MINETEST_VERSION=master
-              MINETEST_GAME_VERSION=master
-              MINETEST_IRRLICHT_VERSION=master
-            tags: |-
-              5.8.0-dev
-              unstable
-              dev
-            platforms: |-
               linux/arm64
           - dockerfile: Dockerfile
             args: |-
@@ -53,15 +43,6 @@ jobs:
               stable-5
             platforms: |-
               linux/amd64
-          - dockerfile: Dockerfile
-            args: |-
-              MINETEST_VERSION=5.7.0
-              MINETEST_GAME_VERSION=5.7.0
-              MINETEST_IRRLICHT_VERSION=1.9.0mt10
-            tags: |-
-              stable
-              stable-5
-            platforms: |-
               linux/arm64
       fail-fast: true
 
