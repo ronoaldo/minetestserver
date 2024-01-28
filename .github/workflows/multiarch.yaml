@@ -36,7 +36,7 @@ jobs:
           - dockerfile: Dockerfile
             args: |-
               MINETEST_VERSION=5.8.0
-              MINETEST_GAME_VERSION=5.7.0
+              MINETEST_GAME_VERSION=5.8.0
               MINETEST_IRRLICHT_VERSION=1.9.0mt13
             tags: |-
               stable
