@@ -38,7 +38,7 @@ jobs:
             args: |-
               MINETEST_VERSION=5.9.0
               MINETEST_GAME_VERSION=4e402ec39fb1852b148e62637df0b72ae70ecd7d
-              LUAJIT_VERSION=4e402ec39fb1852b148e62637df0b72ae70ecd7d
+              LUAJIT_VERSION=f725e44cda8f359869bf8f92ce71787ddca45618
             tags: |-
               stable
               stable-5
