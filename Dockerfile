@@ -1,14 +1,15 @@
 # Build stage
 FROM debian:bookworm-slim AS builder
 
-# Build-time arguments
+# Build-time arguments - defaults to dev build of more recent version
 ARG MINETEST_VERSION=master
 ARG MINETEST_GAME_VERSION=master
-ARG MINETEST_IRRLICHT_VERSION=master
+ARG MINETEST_IRRLICHT_VERSION=none
+# LuaJIT rolling stable branch is v2.1
+ARG LUAJIT_VERSION=v2.1
+
 ARG MINETOOLS_VERSION=v0.2.2
-# Using a specific and newer LuaJIT commit to fix several ARM issues
-# and crashes. This commit uses the unrelease v2.1 branch.
-ARG LUAJIT_VERSION=505e2c03de35e2718eef0d2d3660712e06dadf1f
+ENV MINETOOLS_DL_URL=https://github.com/ronoaldo/minetools/releases/download
 
 # Install all build-dependencies
 RUN apt-get update &&\
@@ -29,9 +30,11 @@ RUN mkdir -p /usr/src &&\
 RUN git clone --depth=1 -b ${MINETEST_GAME_VERSION} \
         https://github.com/minetest/minetest_game.git \
         /usr/src/minetest/games/minetest_game
-RUN git clone --depth=1 -b ${MINETEST_IRRLICHT_VERSION} \
+RUN if [ "${MINETEST_IRRLICHT_VERSION}" != "none" ] ; then \
+        git clone --depth=1 -b ${MINETEST_IRRLICHT_VERSION} \
         https://github.com/minetest/irrlicht \
-        /usr/src/minetest/lib/irrlichtmt
+        /usr/src/minetest/lib/irrlichtmt ; \
+    fi
 RUN git clone \
         https://github.com/LuaJIT/LuaJIT.git \
         /usr/src/luajit &&\
@@ -45,13 +48,13 @@ RUN echo "Building for arch $(uname -m)" &&\
         *) echo "Unsupported arch $(uname -m)" ; exit 1 ;; \
     esac &&\
     curl -SsL --fail \
-        https://github.com/ronoaldo/minetools/releases/download/${MINETOOLS_VERSION}/contentdb-linux-${ARCH}.zip > /tmp/minetools.zip &&\
+        ${MINETOOLS_DL_URL}/${MINETOOLS_VERSION}/contentdb-linux-${ARCH}.zip > /tmp/minetools.zip &&\
         cd /tmp/ && unzip minetools.zip && mv dist/contentdb /usr/bin &&\
         rm /tmp/minetools.zip
 
 # Build LuaJIT
 WORKDIR /usr/src/luajit
-RUN sed -e 's/PREREL=.*/PREREL=-beta4-mercurio/g' -i Makefile
+RUN sed -e 's/PREREL=.*/PREREL=-rolling/g' -i Makefile
 RUN make PREFIX=/usr &&\
     make install PREFIX=/usr &&\
     make install PREFIX=/usr DESTDIR=/opt/luajit
@@ -93,4 +96,4 @@ ADD minetest-wrapper.sh /usr/bin
 WORKDIR /var/lib/minetest
 USER minetest
 EXPOSE 30000/udp 30000/tcp
-CMD ["/usr/bin/minetest-wrapper.sh", "--config", "/etc/minetest/minetest.conf"]
+CMD ["/usr/bin/minetest-wrapper.sh", "--config", "/etc/minetest/minetest.conf", "--gameid", "minetest"]
