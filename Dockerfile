@@ -27,14 +27,14 @@ RUN mkdir -p /usr/src &&\
         https://github.com/minetest/minetest.git \
         /usr/src/minetest &&\
     rm -rf /usr/src/minetest/.git
-RUN git clone --depth=1 -b ${MINETEST_GAME_VERSION} \
-        https://github.com/minetest/minetest_game.git \
-        /usr/src/minetest/games/minetest_game
 RUN if [ "${MINETEST_IRRLICHT_VERSION}" != "none" ] ; then \
         git clone --depth=1 -b ${MINETEST_IRRLICHT_VERSION} \
         https://github.com/minetest/irrlicht \
         /usr/src/minetest/lib/irrlichtmt ; \
     fi
+RUN git clone --depth=1 https://github.com/minetest/minetest_game.git \
+        /usr/src/minetest/games/minetest_game &&\
+    git -C /usr/src/minetest/games/minetest_game checkout ${MINETEST_GAME_VERSION}
 RUN git clone \
         https://github.com/LuaJIT/LuaJIT.git \
         /usr/src/luajit &&\
