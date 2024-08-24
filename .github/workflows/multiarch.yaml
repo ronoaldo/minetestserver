@@ -25,9 +25,10 @@ jobs:
             args: |-
               MINETEST_VERSION=master
               MINETEST_GAME_VERSION=master
-              MINETEST_IRRLICHT_VERSION=master
+              MINETEST_IRRLICHT_VERSION=none
+              LUAJIT_VERSION=v2.1
             tags: |-
-              5.8.0-dev
+              5.10.0-dev
               unstable
               dev
             platforms: |-
@@ -35,9 +36,9 @@ jobs:
               linux/arm64
           - dockerfile: Dockerfile
             args: |-
-              MINETEST_VERSION=5.8.0
-              MINETEST_GAME_VERSION=5.8.0
-              MINETEST_IRRLICHT_VERSION=1.9.0mt13
+              MINETEST_VERSION=5.9.0
+              MINETEST_GAME_VERSION=4e402ec39fb1852b148e62637df0b72ae70ecd7d
+              LUAJIT_VERSION=f725e44cda8f359869bf8f92ce71787ddca45618
             tags: |-
               stable
               stable-5
