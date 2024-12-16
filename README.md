@@ -1,4 +1,4 @@
-# Minetest Server for Docker Hosting
+# Luanti Server (formely Minetest) for Docker Hosting
 
 This is a docker image designed to host [Luanti](https://www.luanti.org)
 game servers using Docker.
