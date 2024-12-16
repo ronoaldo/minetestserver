@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE: ghcr.io/ronoaldo/minetestserver
+  IMAGE: ghcr.io/ronoaldo/luantiserver
 
 jobs:
   multiarch-build:
@@ -23,12 +23,11 @@ jobs:
         include:
           - dockerfile: Dockerfile
             args: |-
-              MINETEST_VERSION=master
+              LUANTI_VERSION=master
               MINETEST_GAME_VERSION=master
-              MINETEST_IRRLICHT_VERSION=none
               LUAJIT_VERSION=v2.1
             tags: |-
-              5.10.0-dev
+              5.11.0-dev
               unstable
               dev
             platforms: |-
@@ -36,9 +35,9 @@ jobs:
               linux/arm64
           - dockerfile: Dockerfile
             args: |-
-              MINETEST_VERSION=5.9.0
-              MINETEST_GAME_VERSION=4e402ec39fb1852b148e62637df0b72ae70ecd7d
-              LUAJIT_VERSION=f725e44cda8f359869bf8f92ce71787ddca45618
+              LUANTI_VERSION=5.10.0
+              MINETEST_GAME_VERSION=f4f365970ac10f2a510a03df392772683177980c
+              LUAJIT_VERSION=f73e649a954b599fc184726c376476e7a5c439ca
             tags: |-
               stable
               stable-5
@@ -51,15 +50,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract Minetest branch from Dockerfile/args
-        id: minetest-version
+      - name: Extract Luanti version/branch for Dockerfile/args
+        id: luanti-version
         run: |
-          export MINETEST_VERSION="$(echo "${{ matrix.args }}" | grep MINETEST_VERSION | cut -f 2 -d=)"
+          export LUANTI_VERSION="$(echo "${{ matrix.args }}" | grep LUANTI_VERSION | cut -f 2 -d=)"
           export MINETEST_GAME_VERSION="$(echo "${{ matrix.args }}" | grep MINETEST_GAME_VERSION | cut -f 2 -d=)"
-          export IRRLICHT_VERSION="$(echo "${{ matrix.args }}" | grep IRRLICHT_VERSION | cut -f 2 -d=)"
-          echo "version=${MINETEST_VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${LUANTI_VERSION}" >> $GITHUB_OUTPUT
           echo "game=${MINETEST_GAME_VERSION}" >> $GITHUB_OUTPUT
-          echo "irrlicht=${IRRLICHT_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -67,7 +64,7 @@ jobs:
         with:
           images: ${{ env.IMAGE }}
           tags: |
-            ${{ steps.minetest-version.outputs.version }}
+            ${{ steps.luanti-version.outputs.version }}
             ${{ matrix.tags }}
 
       - name: Print calculated Docker tags
@@ -80,9 +77,8 @@ jobs:
         id: run-test-build
         shell: bash
         run: |
-          MINETEST_VERSION=${{steps.minetest-version.outputs.version}} \
-          MINETEST_GAME_VERSION=${{steps.minetest-version.outputs.game}} \
-          MINETEST_IRRLICHT_VERSION=${{steps.minetest-version.outputs.irrlicht}} \
+          LUANTI_VERSION=${{steps.luanti-version.outputs.version}} \
+          MINETEST_GAME_VERSION=${{steps.luanti-version.outputs.game}} \
           ./test/integration-test.sh
 
       - name: Set up QEMU for multiarch builds

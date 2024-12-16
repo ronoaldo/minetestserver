@@ -1,18 +1,18 @@
 #!/bin/bash
 set -e
-set -x
+[ x"${DEBUG}" = x"true" ] && set -x
 
-export MINETEST_VERSION MINETEST_GAME_VERSION IRRLICHT_VERSION
+export LUANTI_VERSION MINETEST_GAME_VERSION LUAJIT_VERSION
 
 BASEDIR="$(readlink -f "$(dirname "$0")/..")"
-IMG="ghcr.io/ronoaldo/minetestserver:testing"
+IMG="ghcr.io/ronoaldo/luantiserver:testing"
 TMPDIR="$(mktemp -d)"
 if [ -t 1 ] ; then 
 	export IT=-it
 fi
 
 log() {
-    echo "$(date "+%Y-%m-%d %H%M%S") $*"
+    echo "[integration-tests] $(date "+%Y-%m-%d %H%M%S") $*"
 }
 
 cleanup() {
@@ -49,16 +49,20 @@ log "Installing required dependencies ..."
 install_deps
 
 log "Detecting versions from workflow ..."
-MT="$(version_from_workflow MINETEST_VERSION)"
+LT="$(version_from_workflow LUANTI_VERSION)"
 MTG="$(version_from_workflow MINETEST_GAME_VERSION)"
-IRR="$(version_from_workflow MINETEST_IRRLICHT_VERSION)"
+LUA="$(version_from_workflow LUAJIT_VERSION)"
 
-log "Building/tagging test image using versions: ${MT}, ${MTG}, ${IRR}... "
+log "Building/tagging test image using versions:"
+log "    Luanti=${LT}"
+log "    Minetest_Game=${MTG}"
+log "    LuaJIT=${LUA}"
+
 docker build \
     -t "${IMG}" \
-    --build-arg MINETEST_VERSION="${MT}" \
+    --build-arg LUANTI_VERSION="${LT}" \
     --build-arg MINETEST_GAME_VERSION="${MTG}" \
-    --build-arg MINETEST_IRRLICHT_VERSION="${IRR}" \
+    --build-arg LUAJIT_VERSION="${LUA}" \
     ./
 
 log "Using ${TMPDIR} as a temporary directory"
@@ -74,7 +78,7 @@ if pushd "${TMPDIR}" ; then
     cp -rv "${BASEDIR}"/test/testdata/.minetest "${TMPDIR}/data"
 
     TEST_IMG="gcr.io/ronoaldo/myserver:testsrv"
-    log "Building and starting test server ..."
+    log "Building and starting test server ${TEST_IMG}..."
     docker build -t ${TEST_IMG} --build-arg BASE_IMAGE=${IMG} ./
 
     # 2. Prepare/fix the data dir
@@ -83,14 +87,15 @@ if pushd "${TMPDIR}" ; then
     docker run ${IT} --rm \
         -v "$PWD:/server" \
         -u 0:0 \
-        ${TEST_IMG} bash -c 'chown -R minetest /server/data'
-    
-    docker run --rm ${TEST_IMG} minetestserver --gameid list
+        ${TEST_IMG} bash -c 'chown -R luanti /server/data'
+    log "Listing installed games:"
+    docker run --rm ${TEST_IMG} luantiserver --gameid list
 
     # 3. Run the server without the restart loop.
     # shellcheck disable=2086
+    log "Testing a local execution with local mods"
     docker run ${IT} --rm \
-        -v "$PWD/data:/var/lib/minetest" \
+        -v "$PWD/data:/var/lib/luanti" \
         -e NO_LOOP=true \
         ${TEST_IMG}
 

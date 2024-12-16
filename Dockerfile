@@ -2,9 +2,8 @@
 FROM debian:bookworm-slim AS builder
 
 # Build-time arguments - defaults to dev build of more recent version
-ARG MINETEST_VERSION=master
+ARG LUANTI_VERSION=master
 ARG MINETEST_GAME_VERSION=master
-ARG MINETEST_IRRLICHT_VERSION=none
 # LuaJIT rolling stable branch is v2.1
 ARG LUAJIT_VERSION=v2.1
 
@@ -23,20 +22,15 @@ RUN apt-get update &&\
 
 # Fetch source
 RUN mkdir -p /usr/src &&\
-    git clone --depth=1 -b ${MINETEST_VERSION} \
-        https://github.com/minetest/minetest.git \
+    git clone --depth=1 -b ${LUANTI_VERSION} \
+        https://github.com/minetest/minetest \
         /usr/src/minetest &&\
     rm -rf /usr/src/minetest/.git
-RUN if [ "${MINETEST_IRRLICHT_VERSION}" != "none" ] ; then \
-        git clone --depth=1 -b ${MINETEST_IRRLICHT_VERSION} \
-        https://github.com/minetest/irrlicht \
-        /usr/src/minetest/lib/irrlichtmt ; \
-    fi
-RUN git clone --depth=1 https://github.com/minetest/minetest_game.git \
+RUN git clone --depth=1 https://github.com/minetest/minetest_game \
         /usr/src/minetest/games/minetest_game &&\
     git -C /usr/src/minetest/games/minetest_game checkout ${MINETEST_GAME_VERSION}
 RUN git clone \
-        https://github.com/LuaJIT/LuaJIT.git \
+        https://github.com/LuaJIT/LuaJIT \
         /usr/src/luajit &&\
     git -C /usr/src/luajit checkout ${LUAJIT_VERSION}
 
@@ -81,19 +75,27 @@ RUN apt-get update &&\
         libspatialindex6 libsqlite3-0 libstdc++6 libtinfo6 zlib1g libzstd1 \
         adduser git -yq &&\
     apt-get clean
-RUN adduser --system --uid 30000 --group --home /var/lib/minetest minetest &&\
-    chown -R minetest:minetest /var/lib/minetest
+# Creates a user to run the server as, with a home dir that can be mounted
+# as a volume
+RUN adduser --system --uid 30000 --group --home /var/lib/luanti luanti &&\
+    chown -R luanti:luanti /var/lib/luanti
 
 # Copy files and folders
-COPY --from=builder /usr/share/doc/minetest/minetest.conf.example /etc/minetest/minetest.conf
-COPY --from=builder /usr/share/minetest     /usr/share/minetest
-COPY --from=builder /usr/src/minetest/games /usr/share/minetest/games
-COPY --from=builder /usr/bin/minetestserver /usr/bin
+COPY --from=builder /usr/share/doc/luanti/minetest.conf.example /etc/luanti/luanti.conf
+COPY --from=builder /usr/share/luanti       /usr/share/luanti
+COPY --from=builder /usr/src/minetest/games /usr/share/luanti/games
+COPY --from=builder /usr/bin/luantiserver   /usr/bin
 COPY --from=builder /usr/bin/contentdb      /usr/bin
 COPY --from=builder /opt/luajit/usr/        /usr/
-ADD minetest-wrapper.sh /usr/bin
+ADD luanti-wrapper.sh /usr/bin
 
-WORKDIR /var/lib/minetest
-USER minetest
+# Add symlinks (minetest -> luanti) to easy the upgrade after upstream rename
+RUN ln -s /usr/share/luanti /usr/share/minetest &&\
+    ln -s /etc/luanti /etc/minetest &&\
+    ln -s /etc/luanti/luanti.conf /etc/luanti/minetest.conf &&\
+    ln -s /usr/bin/luanti-wrapper.sh /usr/bin/minetest-wrapper.sh
+
+WORKDIR /var/lib/luanti
+USER luanti 
 EXPOSE 30000/udp 30000/tcp
-CMD ["/usr/bin/minetest-wrapper.sh", "--config", "/etc/minetest/minetest.conf", "--gameid", "minetest"]
+CMD ["/usr/bin/luanti-wrapper.sh", "--config", "/etc/luanti/luanti.conf", "--gameid", "minetest"]

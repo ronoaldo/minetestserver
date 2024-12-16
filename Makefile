@@ -1,12 +1,14 @@
 SHELL=bash
-IMAGE=ghcr.io/ronoaldo/minetestserver
+IMAGE=ghcr.io/ronoaldo/luantiserver
 TAG=latest
 
 build:
 	docker build -t ${IMAGE}:${TAG} .
 
 run: build
-	docker run --rm --name minetestserver -it -P ${IMAGE}:${TAG}
+	docker run --rm --name luantiserver -it \
+		--publish 30000:30000/udp \
+		--publish 30000:30000/tcp ${IMAGE}:${TAG}
 
 build-workflow-matrix:
 	@for i in $$(seq 0 1) ; do \

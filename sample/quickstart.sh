@@ -10,11 +10,11 @@ mkdir -p data
 docker run -it --rm \
 	-v "$PWD:/server" \
 	-u 0:0 \
-	myserver:latest bash -c 'chown -R minetest /server/data'
+	myserver:latest bash -c 'chown -R luanti /server/data'
 
 # 3. Run the server
 docker run -it --rm --name=myserver \
-	-v "$PWD/data:/var/lib/minetest" \
+	-v "$PWD/data:/var/lib/luanti" \
 	-p 30000:30000/udp -p 30000:30000/tcp \
 	-e NO_LOOP=true \
 	myserver:latest
