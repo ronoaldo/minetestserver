@@ -6,7 +6,7 @@ MINETEST_STDERR_FILE=${MINETEST_STDERR_FILE:-/tmp/minetest.stderr}
 {
 while true ; do
 	echo -e "\n\n-- Separator --\n\n" >> "${MINETEST_STDERR_FILE}"
-	minetestserver "$@"
+	luantiserver "$@"
 	RET="$?"
 	echo "${RET}" > /tmp/status
 	if [ "${NO_LOOP}" == "true" ]; then

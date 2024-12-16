@@ -81,19 +81,28 @@ RUN apt-get update &&\
         libspatialindex6 libsqlite3-0 libstdc++6 libtinfo6 zlib1g libzstd1 \
         adduser git -yq &&\
     apt-get clean
-RUN adduser --system --uid 30000 --group --home /var/lib/minetest minetest &&\
-    chown -R minetest:minetest /var/lib/minetest
+# Creates a user to run the server as, with a home dir that can be mounted
+# as a volume
+RUN adduser --system --uid 30000 --group --home /var/lib/luanti luanti &&\
+    chown -R luanti:luanti /var/lib/luanti
 
 # Copy files and folders
-COPY --from=builder /usr/share/doc/minetest/minetest.conf.example /etc/minetest/minetest.conf
-COPY --from=builder /usr/share/minetest     /usr/share/minetest
-COPY --from=builder /usr/src/minetest/games /usr/share/minetest/games
-COPY --from=builder /usr/bin/minetestserver /usr/bin
+COPY --from=builder /usr/share/doc/luanti/minetest.conf.example /etc/luanti/luanti.conf
+COPY --from=builder /usr/share/luanti       /usr/share/luanti
+COPY --from=builder /usr/src/minetest/games /usr/share/luanti/games
+COPY --from=builder /usr/bin/luantiserver   /usr/bin
 COPY --from=builder /usr/bin/contentdb      /usr/bin
 COPY --from=builder /opt/luajit/usr/        /usr/
-ADD minetest-wrapper.sh /usr/bin
+ADD luanti-wrapper.sh /usr/bin
 
-WORKDIR /var/lib/minetest
-USER minetest
+# Add symlinks (minetest -> luanti) to easy the upgrade after upstream rename
+RUN ln -s /usr/share/luanti /usr/share/minetest &&\
+    ln -s /usr/bin/luantiserver /usr/bin/minetestserver &&\
+    ln -s /etc/luanti /etc/minetest &&\
+    ln -s /etc/luanti/luanti.conf /etc/luanti/minetest.conf &&\
+    ln -s /usr/bin/luanti-wrapper.sh /usr/bin/minetest-wrapper.sh
+
+WORKDIR /var/lib/luanti
+USER luanti 
 EXPOSE 30000/udp 30000/tcp
-CMD ["/usr/bin/minetest-wrapper.sh", "--config", "/etc/minetest/minetest.conf", "--gameid", "minetest"]
+CMD ["/usr/bin/luanti-wrapper.sh", "--config", "/etc/luanti/luanti.conf", "--gameid", "minetest"]
