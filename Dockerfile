@@ -2,9 +2,8 @@
 FROM debian:bookworm-slim AS builder
 
 # Build-time arguments - defaults to dev build of more recent version
-ARG MINETEST_VERSION=master
+ARG LUANTI_VERSION=master
 ARG MINETEST_GAME_VERSION=master
-ARG MINETEST_IRRLICHT_VERSION=none
 # LuaJIT rolling stable branch is v2.1
 ARG LUAJIT_VERSION=v2.1
 
@@ -23,20 +22,15 @@ RUN apt-get update &&\
 
 # Fetch source
 RUN mkdir -p /usr/src &&\
-    git clone --depth=1 -b ${MINETEST_VERSION} \
-        https://github.com/minetest/minetest.git \
+    git clone --depth=1 -b ${LUANTI_VERSION} \
+        https://github.com/minetest/minetest \
         /usr/src/minetest &&\
     rm -rf /usr/src/minetest/.git
-RUN if [ "${MINETEST_IRRLICHT_VERSION}" != "none" ] ; then \
-        git clone --depth=1 -b ${MINETEST_IRRLICHT_VERSION} \
-        https://github.com/minetest/irrlicht \
-        /usr/src/minetest/lib/irrlichtmt ; \
-    fi
-RUN git clone --depth=1 https://github.com/minetest/minetest_game.git \
+RUN git clone --depth=1 https://github.com/minetest/minetest_game \
         /usr/src/minetest/games/minetest_game &&\
     git -C /usr/src/minetest/games/minetest_game checkout ${MINETEST_GAME_VERSION}
 RUN git clone \
-        https://github.com/LuaJIT/LuaJIT.git \
+        https://github.com/LuaJIT/LuaJIT \
         /usr/src/luajit &&\
     git -C /usr/src/luajit checkout ${LUAJIT_VERSION}
 
@@ -97,7 +91,6 @@ ADD luanti-wrapper.sh /usr/bin
 
 # Add symlinks (minetest -> luanti) to easy the upgrade after upstream rename
 RUN ln -s /usr/share/luanti /usr/share/minetest &&\
-    ln -s /usr/bin/luantiserver /usr/bin/minetestserver &&\
     ln -s /etc/luanti /etc/minetest &&\
     ln -s /etc/luanti/luanti.conf /etc/luanti/minetest.conf &&\
     ln -s /usr/bin/luanti-wrapper.sh /usr/bin/minetest-wrapper.sh

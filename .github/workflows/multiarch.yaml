@@ -27,7 +27,7 @@ jobs:
               MINETEST_GAME_VERSION=master
               LUAJIT_VERSION=v2.1
             tags: |-
-              5.10.0-dev
+              5.11.0-dev
               unstable
               dev
             platforms: |-

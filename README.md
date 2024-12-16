@@ -1,6 +1,6 @@
 # Minetest Server for Docker Hosting
 
-This is a docker image designed to host [Minetest](https://www.minetest.net)
+This is a docker image designed to host [Luanti](https://www.luanti.org)
 game servers using Docker.
 
 This is based on Debian Stable (for security patches from upstream), and has
@@ -37,13 +37,13 @@ how to setup your custom server with Docker using this base image.
 
 You can start building your server easily with the following `Dockerfile`:
 
-    FROM ghcr.io/ronoaldo/minetestserver:stable
+    FROM ghcr.io/ronoaldo/luantiserver:stable
     
     USER root
-    RUN cd /usr/share/minetest &&\
+    RUN cd /usr/share/luanti &&\
         contentdb install TenPlus1/ethereal
     
-    USER minetest
+    USER luanti
 
 After that, you can build your server image with `docker build`:
 
@@ -72,7 +72,7 @@ Then, bind-mount this to the container when launching your server:
 
     docker run -it \
         -p 30000:30000/udp -p 30000:30000/tcp \
-        -v $PWD/data:/var/lib/minetest:rw \
+        -v $PWD/data:/var/lib/luanti:rw \
         myserver:latest
 
 You will see that the folder `./data/.minetest` will be created. You can now
@@ -88,9 +88,9 @@ provided by the Minetest distribution, and placed at
 One easy way to start changing it is to copy the file from the container:
 
     docker run -it \
-        -v $PWD/data:/var/lib/minetest:rw \
+        -v $PWD/data:/var/lib/luanti:rw \
         myserver:latest \
-        cp /etc/minetest/minetest.conf /var/lib/minetest/
+        cp /etc/luanti/luanti.conf /var/lib/luanti/
 
 This will create a new file in your `./data/` folder named `minetest.conf`. 
 
@@ -101,13 +101,12 @@ to this file or make world backups. To fix that, try this:
     sudo chmod -R g+rw ./data
 
 The final step is to launch you server with the new settings. We provide a
-convenient [wrapper](./minetest-wrapper.sh) to restart your server automatically
+convenient [wrapper](./luanti-wrapper.sh) to restart your server automatically
 if it crashes. So, to change the settings, you can then launch the container
 like this:
 
     docker run -it \
         -p 30000:30000/udp -p 30000:30000/tcp \
-        -v $PWD/data:/var/lib/minetest:rw \
+        -v $PWD/data:/var/lib/luanti:rw \
         myserver:latest \
-        minetest-wrapper.sh --config /var/lib/minetest/minetest.conf
-
+        luanti-wrapper.sh --config /var/lib/luanti/luanti.conf
