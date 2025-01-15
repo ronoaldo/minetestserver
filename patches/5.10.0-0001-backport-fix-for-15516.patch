@@ -1,0 +1,623 @@
+diff --git a/src/emerge_internal.h b/src/emerge_internal.h
+index 6dd438603ed72..6a71c7523371a 100644
+--- a/src/emerge_internal.h
++++ b/src/emerge_internal.h
+@@ -93,7 +93,7 @@ class MapEditEventAreaIgnorer
+ 	MapEditEventAreaIgnorer(VoxelArea *ignorevariable, const VoxelArea &a):
+ 		m_ignorevariable(ignorevariable)
+ 	{
+-		if (m_ignorevariable->getVolume() == 0)
++		if (m_ignorevariable->hasEmptyExtent())
+ 			*m_ignorevariable = a;
+ 		else
+ 			m_ignorevariable = nullptr;
+@@ -102,7 +102,7 @@ class MapEditEventAreaIgnorer
+ 	~MapEditEventAreaIgnorer()
+ 	{
+ 		if (m_ignorevariable) {
+-			assert(m_ignorevariable->getVolume() != 0);
++			assert(!m_ignorevariable->hasEmptyExtent());
+ 			*m_ignorevariable = VoxelArea();
+ 		}
+ 	}
+diff --git a/src/map.cpp b/src/map.cpp
+index 1af8684e18681..2407889440a9d 100644
+--- a/src/map.cpp
++++ b/src/map.cpp
+@@ -766,7 +766,7 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
+ 	VoxelArea block_area_nodes
+ 			(p_min*MAP_BLOCKSIZE, (p_max+1)*MAP_BLOCKSIZE-v3s16(1,1,1));
+ 
+-	u32 size_MB = block_area_nodes.getVolume()*4/1000000;
++	u32 size_MB = block_area_nodes.getVolume() * sizeof(MapNode) / 1000000U;
+ 	if(size_MB >= 1)
+ 	{
+ 		infostream<<"initialEmerge: area: ";
+@@ -855,7 +855,7 @@ MMVManip *MMVManip::clone() const
+ {
+ 	MMVManip *ret = new MMVManip();
+ 
+-	const s32 size = m_area.getVolume();
++	const u32 size = m_area.getVolume();
+ 	ret->m_area = m_area;
+ 	if (m_data) {
+ 		ret->m_data = new MapNode[size];
+diff --git a/src/map.h b/src/map.h
+index bbe91f5d66733..37d1a713d4d96 100644
+--- a/src/map.h
++++ b/src/map.h
+@@ -79,7 +79,7 @@ struct MapEditEvent
+ 			VoxelArea a;
+ 			for (v3s16 p : modified_blocks) {
+ 				v3s16 np1 = p*MAP_BLOCKSIZE;
+-				v3s16 np2 = np1 + v3s16(1,1,1)*MAP_BLOCKSIZE - v3s16(1,1,1);
++				v3s16 np2 = np1 + v3s16(MAP_BLOCKSIZE-1);
+ 				a.addPoint(np1);
+ 				a.addPoint(np2);
+ 			}
+diff --git a/src/mapgen/cavegen.cpp b/src/mapgen/cavegen.cpp
+index f422db67de1d5..082199cca71bf 100644
+--- a/src/mapgen/cavegen.cpp
++++ b/src/mapgen/cavegen.cpp
+@@ -64,7 +64,7 @@ void CavesNoiseIntersection::generateCaves(MMVManip *vm,
+ 	noise_cave1->perlinMap3D(nmin.X, nmin.Y - 1, nmin.Z);
+ 	noise_cave2->perlinMap3D(nmin.X, nmin.Y - 1, nmin.Z);
+ 
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 	u32 index2d = 0;  // Biomemap index
+ 
+ 	for (s16 z = nmin.Z; z <= nmax.Z; z++)
+@@ -230,7 +230,7 @@ bool CavernsNoise::generateCaverns(MMVManip *vm, v3s16 nmin, v3s16 nmax)
+ 
+ 	//// Place nodes
+ 	bool near_cavern = false;
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 	u32 index2d = 0;
+ 
+ 	for (s16 z = nmin.Z; z <= nmax.Z; z++)
+diff --git a/src/mapgen/dungeongen.cpp b/src/mapgen/dungeongen.cpp
+index 948cc62b15687..249c462baf349 100644
+--- a/src/mapgen/dungeongen.cpp
++++ b/src/mapgen/dungeongen.cpp
+@@ -127,7 +127,7 @@ void DungeonGen::generate(MMVManip *vm, u32 bseed, v3s16 nmin, v3s16 nmax)
+ 
+ void DungeonGen::makeDungeon(v3s16 start_padding)
+ {
+-	const v3s16 &areasize = vm->m_area.getExtent();
++	const v3s32 &areasize = vm->m_area.getExtent();
+ 	v3s16 roomsize;
+ 	v3s16 roomplace;
+ 
+diff --git a/src/mapgen/mapgen.cpp b/src/mapgen/mapgen.cpp
+index dd416a3e4dc51..f8a9395d0d594 100644
+--- a/src/mapgen/mapgen.cpp
++++ b/src/mapgen/mapgen.cpp
+@@ -240,7 +240,7 @@ u32 Mapgen::getBlockSeed2(v3s16 p, s32 seed)
+ // Returns -MAX_MAP_GENERATION_LIMIT if not found
+ s16 Mapgen::findGroundLevel(v2s16 p2d, s16 ymin, s16 ymax)
+ {
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 	u32 i = vm->m_area.index(p2d.X, ymax, p2d.Y);
+ 	s16 y;
+ 
+@@ -258,7 +258,7 @@ s16 Mapgen::findGroundLevel(v2s16 p2d, s16 ymin, s16 ymax)
+ // Returns -MAX_MAP_GENERATION_LIMIT if not found or if ground is found first
+ s16 Mapgen::findLiquidSurface(v2s16 p2d, s16 ymin, s16 ymax)
+ {
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 	u32 i = vm->m_area.index(p2d.X, ymax, p2d.Y);
+ 	s16 y;
+ 
+@@ -296,7 +296,7 @@ void Mapgen::updateHeightmap(v3s16 nmin, v3s16 nmax)
+ void Mapgen::getSurfaces(v2s16 p2d, s16 ymin, s16 ymax,
+ 	std::vector<s16> &floors, std::vector<s16> &ceilings)
+ {
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 
+ 	bool is_walkable = false;
+ 	u32 vi = vm->m_area.index(p2d.X, ymax, p2d.Y);
+@@ -320,7 +320,7 @@ void Mapgen::getSurfaces(v2s16 p2d, s16 ymin, s16 ymax,
+ }
+ 
+ 
+-inline bool Mapgen::isLiquidHorizontallyFlowable(u32 vi, v3s16 em)
++inline bool Mapgen::isLiquidHorizontallyFlowable(u32 vi, v3s32 em)
+ {
+ 	u32 vi_neg_x = vi;
+ 	VoxelArea::add_x(em, vi_neg_x, -1);
+@@ -357,7 +357,7 @@ void Mapgen::updateLiquid(UniqueQueue<v3s16> *trans_liquid, v3s16 nmin, v3s16 nm
+ {
+ 	bool isignored, isliquid, wasignored, wasliquid, waschecked, waspushed;
+ 	content_t was_n;
+-	const v3s16 &em  = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 
+ 	isignored = true;
+ 	isliquid = false;
+@@ -481,7 +481,7 @@ void Mapgen::propagateSunlight(v3s16 nmin, v3s16 nmax, bool propagate_shadow)
+ 	//TimeTaker t("propagateSunlight");
+ 	VoxelArea a(nmin, nmax);
+ 	bool block_is_underground = (water_level >= nmax.Y);
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 
+ 	// NOTE: Direct access to the low 4 bits of param1 is okay here because,
+ 	// by definition, sunlight will never be in the night lightbank.
+@@ -629,7 +629,7 @@ void MapgenBasic::generateBiomes()
+ 	assert(biomegen);
+ 	assert(biomemap);
+ 
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 	u32 index = 0;
+ 
+ 	noise_filler_depth->perlinMap2D(node_min.X, node_min.Z);
+@@ -768,7 +768,7 @@ void MapgenBasic::dustTopNodes()
+ 	if (node_max.Y < water_level)
+ 		return;
+ 
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 	u32 index = 0;
+ 
+ 	for (s16 z = node_min.Z; z <= node_max.Z; z++)
+diff --git a/src/mapgen/mapgen.h b/src/mapgen/mapgen.h
+index 5e5ff9f3ce698..a81b9a3616779 100644
+--- a/src/mapgen/mapgen.h
++++ b/src/mapgen/mapgen.h
+@@ -261,7 +261,7 @@ class Mapgen {
+ 	// isLiquidHorizontallyFlowable() is a helper function for updateLiquid()
+ 	// that checks whether there are floodable nodes without liquid beneath
+ 	// the node at index vi.
+-	inline bool isLiquidHorizontallyFlowable(u32 vi, v3s16 em);
++	inline bool isLiquidHorizontallyFlowable(u32 vi, v3s32 em);
+ };
+ 
+ /*
+diff --git a/src/mapgen/mapgen_carpathian.cpp b/src/mapgen/mapgen_carpathian.cpp
+index ba54a367294ca..46048b51f6bec 100644
+--- a/src/mapgen/mapgen_carpathian.cpp
++++ b/src/mapgen/mapgen_carpathian.cpp
+@@ -445,7 +445,7 @@ int MapgenCarpathian::generateTerrain()
+ 		noise_rivers->perlinMap2D(node_min.X, node_min.Z);
+ 
+ 	//// Place nodes
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 	s16 stone_surface_max_y = -MAX_MAP_GENERATION_LIMIT;
+ 	u32 index2d = 0;
+ 
+diff --git a/src/mapgen/mapgen_flat.cpp b/src/mapgen/mapgen_flat.cpp
+index f0e7984d5e03b..e96e4e45a9599 100644
+--- a/src/mapgen/mapgen_flat.cpp
++++ b/src/mapgen/mapgen_flat.cpp
+@@ -278,7 +278,7 @@ s16 MapgenFlat::generateTerrain()
+ 	MapNode n_stone(c_stone);
+ 	MapNode n_water(c_water_source);
+ 
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 	s16 stone_surface_max_y = -MAX_MAP_GENERATION_LIMIT;
+ 	u32 ni2d = 0;
+ 
+diff --git a/src/mapgen/mapgen_v6.cpp b/src/mapgen/mapgen_v6.cpp
+index 2f5a3cf7a2c63..44243618ef1c7 100644
+--- a/src/mapgen/mapgen_v6.cpp
++++ b/src/mapgen/mapgen_v6.cpp
+@@ -222,7 +222,7 @@ void MapgenV6Params::setDefaultSettings(Settings *settings)
+ // Returns Y one under area minimum if not found
+ s16 MapgenV6::find_stone_level(v2s16 p2d)
+ {
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 	s16 y_nodes_max = vm->m_area.MaxEdge.Y;
+ 	s16 y_nodes_min = vm->m_area.MinEdge.Y;
+ 	u32 i = vm->m_area.index(p2d.X, y_nodes_max, p2d.Y);
+@@ -670,7 +670,7 @@ int MapgenV6::generateGround()
+ 		BiomeV6Type bt = getBiome(v2s16(x, z));
+ 
+ 		// Fill ground with stone
+-		const v3s16 &em = vm->m_area.getExtent();
++		const v3s32 &em = vm->m_area.getExtent();
+ 		u32 i = vm->m_area.index(x, node_min.Y, z);
+ 		for (s16 y = node_min.Y; y <= node_max.Y; y++) {
+ 			if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
+@@ -739,7 +739,7 @@ void MapgenV6::addMud()
+ 
+ 		// Add mud on ground
+ 		s16 mudcount = 0;
+-		const v3s16 &em = vm->m_area.getExtent();
++		const v3s32 &em = vm->m_area.getExtent();
+ 		s16 y_start = surface_y + 1;
+ 		u32 i = vm->m_area.index(x, y_start, z);
+ 		for (s16 y = y_start; y <= node_max.Y; y++) {
+@@ -757,7 +757,7 @@ void MapgenV6::addMud()
+ 
+ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
+ {
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 	static const v3s16 dirs4[4] = {
+ 		v3s16(0, 0, 1), // Back
+ 		v3s16(1, 0, 0), // Right
+@@ -870,7 +870,7 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
+ 
+ 
+ void MapgenV6::moveMud(u32 remove_index, u32 place_index,
+-	u32 above_remove_index, v2s16 pos, v3s16 em)
++	u32 above_remove_index, v2s16 pos, v3s32 em)
+ {
+ 	MapNode n_air(CONTENT_AIR);
+ 	// Copy mud from old place to new place
+@@ -920,7 +920,7 @@ void MapgenV6::placeTreesAndJungleGrass()
+ 	if (c_junglegrass == CONTENT_IGNORE)
+ 		c_junglegrass = CONTENT_AIR;
+ 	MapNode n_junglegrass(c_junglegrass);
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 
+ 	// Divide area into parts
+ 	s16 div = 8;
+@@ -1027,7 +1027,7 @@ void MapgenV6::growGrass() // Add surface nodes
+ 	MapNode n_dirt_with_grass(c_dirt_with_grass);
+ 	MapNode n_dirt_with_snow(c_dirt_with_snow);
+ 	MapNode n_snowblock(c_snowblock);
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 
+ 	u32 index = 0;
+ 	for (s16 z = full_node_min.Z; z <= full_node_max.Z; z++)
+diff --git a/src/mapgen/mapgen_v6.h b/src/mapgen/mapgen_v6.h
+index 30b31f84a28fb..6d776665a4781 100644
+--- a/src/mapgen/mapgen_v6.h
++++ b/src/mapgen/mapgen_v6.h
+@@ -150,7 +150,7 @@ class MapgenV6 : public Mapgen {
+ 	void addMud();
+ 	void flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos);
+ 	void moveMud(u32 remove_index, u32 place_index,
+-		u32 above_remove_index, v2s16 pos, v3s16 em);
++		u32 above_remove_index, v2s16 pos, v3s32 em);
+ 	void growGrass();
+ 	void placeTreesAndJungleGrass();
+ 	virtual void generateCaves(int max_stone_y);
+diff --git a/src/mapgen/mapgen_v7.cpp b/src/mapgen/mapgen_v7.cpp
+index 491a1514a8014..fe052f3b7afbd 100644
+--- a/src/mapgen/mapgen_v7.cpp
++++ b/src/mapgen/mapgen_v7.cpp
+@@ -523,7 +523,7 @@ int MapgenV7::generateTerrain()
+ 	}
+ 
+ 	//// Place nodes
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 	s16 stone_surface_max_y = -MAX_MAP_GENERATION_LIMIT;
+ 	u32 index2d = 0;
+ 
+diff --git a/src/mapgen/mapgen_valleys.cpp b/src/mapgen/mapgen_valleys.cpp
+index 1964546422999..55185c445c408 100644
+--- a/src/mapgen/mapgen_valleys.cpp
++++ b/src/mapgen/mapgen_valleys.cpp
+@@ -344,7 +344,7 @@ int MapgenValleys::generateTerrain()
+ 
+ 	noise_inter_valley_fill->perlinMap3D(node_min.X, node_min.Y - 1, node_min.Z);
+ 
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 	s16 surface_max_y = -MAX_MAP_GENERATION_LIMIT;
+ 	u32 index_2d = 0;
+ 
+diff --git a/src/mapgen/mg_decoration.cpp b/src/mapgen/mg_decoration.cpp
+index 60183d4e4255d..e8f381ec6f346 100644
+--- a/src/mapgen/mg_decoration.cpp
++++ b/src/mapgen/mg_decoration.cpp
+@@ -346,7 +346,7 @@ size_t DecoSimple::generate(MMVManip *vm, PcgRandom *pr, v3s16 p, bool ceiling)
+ 		pr->range(deco_param2, deco_param2_max) : deco_param2;
+ 	bool force_placement = (flags & DECO_FORCE_PLACEMENT);
+ 
+-	const v3s16 &em = vm->m_area.getExtent();
++	const v3s32 &em = vm->m_area.getExtent();
+ 	u32 vi = vm->m_area.index(p);
+ 
+ 	if (ceiling) {
+diff --git a/src/mapgen/treegen.cpp b/src/mapgen/treegen.cpp
+index e03f4148252e9..bf7f9b1b0ac82 100644
+--- a/src/mapgen/treegen.cpp
++++ b/src/mapgen/treegen.cpp
+@@ -77,7 +77,7 @@ void make_tree(MMVManip &vmanip, v3s16 p0, bool is_apple_tree,
+ 
+ 	VoxelArea leaves_a(v3s16(-2, -1, -2), v3s16(2, 2, 2));
+ 	Buffer<u8> leaves_d(leaves_a.getVolume());
+-	for (s32 i = 0; i < leaves_a.getVolume(); i++)
++	for (u32 i = 0; i < leaves_d.getSize(); i++)
+ 		leaves_d[i] = 0;
+ 
+ 	// Force leaves at near the end of the trunk
+@@ -697,9 +697,8 @@ void make_jungletree(MMVManip &vmanip, v3s16 p0, const NodeDefManager *ndef,
+ 	p1.Y -= 1;
+ 
+ 	VoxelArea leaves_a(v3s16(-3, -2, -3), v3s16(3, 2, 3));
+-	//SharedPtr<u8> leaves_d(new u8[leaves_a.getVolume()]);
+ 	Buffer<u8> leaves_d(leaves_a.getVolume());
+-	for (s32 i = 0; i < leaves_a.getVolume(); i++)
++	for (u32 i = 0; i < leaves_d.getSize(); i++)
+ 		leaves_d[i] = 0;
+ 
+ 	// Force leaves at near the end of the trunk
+@@ -788,7 +787,7 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, const NodeDefManager *ndef,
+ 
+ 	VoxelArea leaves_a(v3s16(-3, -6, -3), v3s16(3, 3, 3));
+ 	Buffer<u8> leaves_d(leaves_a.getVolume());
+-	for (s32 i = 0; i < leaves_a.getVolume(); i++)
++	for (u32 i = 0; i < leaves_d.getSize(); i++)
+ 		leaves_d[i] = 0;
+ 
+ 	// Upper branches
+diff --git a/src/unittest/test_voxelalgorithms.cpp b/src/unittest/test_voxelalgorithms.cpp
+index 2a98412b4d5de..b8ba11248652e 100644
+--- a/src/unittest/test_voxelalgorithms.cpp
++++ b/src/unittest/test_voxelalgorithms.cpp
+@@ -98,8 +98,8 @@ void TestVoxelAlgorithms::testLighting(IGameDef *gamedef)
+ 		std::map<v3s16, MapBlock*> modified_blocks;
+ 		MMVManip vm(&map);
+ 		vm.initialEmerge(bpmin, bpmax, false);
+-		s32 volume = vm.m_area.getVolume();
+-		for (s32 i = 0; i < volume; i++)
++		u32 volume = vm.m_area.getVolume();
++		for (u32 i = 0; i < volume; i++)
+ 			vm.m_data[i] = MapNode(CONTENT_AIR);
+ 		for (s16 z = -10; z <= 10; z++)
+ 		for (s16 y = -10; y <= 10; y++)
+diff --git a/src/unittest/test_voxelarea.cpp b/src/unittest/test_voxelarea.cpp
+index 384fda0d1d771..f594a9be7af49 100644
+--- a/src/unittest/test_voxelarea.cpp
++++ b/src/unittest/test_voxelarea.cpp
+@@ -107,25 +107,34 @@ void TestVoxelArea::test_pad()
+ void TestVoxelArea::test_extent()
+ {
+ 	VoxelArea v1(v3s16(-1337, -547, -789), v3s16(-147, 447, 669));
+-	UASSERT(v1.getExtent() == v3s16(1191, 995, 1459));
++	UASSERT(v1.getExtent() == v3s32(1191, 995, 1459));
+ 
+ 	VoxelArea v2(v3s16(32493, -32507, 32752), v3s16(32508, -32492, 32767));
+-	UASSERT(v2.getExtent() == v3s16(16, 16, 16));
++	UASSERT(v2.getExtent() == v3s32(16, 16, 16));
+ 
++	// side length bigger than S16_MAX
++	VoxelArea v3({-20000, 12, 34}, {20000, 12, 34});
++	UASSERT(v3.getExtent() == v3s32(40001, 1, 1));
++
++	UASSERT(VoxelArea().hasEmptyExtent());
+ 	UASSERT(VoxelArea({2,3,4}, {1,2,3}).hasEmptyExtent());
+-	UASSERT(VoxelArea({2,3,4}, {2,2,3}).hasEmptyExtent() == false);
++	UASSERT(VoxelArea({2,3,4}, {2,2,3}).hasEmptyExtent());
+ }
+ 
+ void TestVoxelArea::test_volume()
+ {
+ 	VoxelArea v1(v3s16(-1337, -547, -789), v3s16(-147, 447, 669));
+-	UASSERTEQ(s32, v1.getVolume(), 1728980655);
++	UASSERTEQ(u32, v1.getVolume(), 1728980655);
+ 
+ 	VoxelArea v2(v3s16(32493, -32507, 32752), v3s16(32508, -32492, 32767));
+-	UASSERTEQ(s32, v2.getVolume(), 4096);
++	UASSERTEQ(u32, v2.getVolume(), 4096);
++
++	// volume bigger than S32_MAX
++	VoxelArea v3({1, 1, 1}, {1337, 1337, 1337});
++	UASSERTEQ(u32, v3.getVolume(), 2389979753U);
+ 
+-	UASSERTEQ(s32, VoxelArea({2,3,4}, {1,2,3}).getVolume(), 0);
+-	UASSERTEQ(s32, VoxelArea({2,3,4}, {2,2,3}).getVolume(), 0);
++	UASSERTEQ(u32, VoxelArea({2,3,4}, {1,2,3}).getVolume(), 0);
++	UASSERTEQ(u32, VoxelArea({2,3,4}, {2,2,3}).getVolume(), 0);
+ }
+ 
+ void TestVoxelArea::test_contains_voxelarea()
+@@ -388,7 +397,7 @@ void TestVoxelArea::test_index_v3s16_all_neg()
+ 
+ void TestVoxelArea::test_add_x()
+ {
+-	v3s16 extent;
++	v3s32 extent;
+ 	u32 i = 4;
+ 	VoxelArea::add_x(extent, i, 8);
+ 	UASSERTEQ(u32, i, 12)
+@@ -396,7 +405,7 @@ void TestVoxelArea::test_add_x()
+ 
+ void TestVoxelArea::test_add_y()
+ {
+-	v3s16 extent(740, 16, 87);
++	v3s32 extent(740, 16, 87);
+ 	u32 i = 8;
+ 	VoxelArea::add_y(extent, i, 88);
+ 	UASSERTEQ(u32, i, 65128)
+@@ -404,7 +413,7 @@ void TestVoxelArea::test_add_y()
+ 
+ void TestVoxelArea::test_add_z()
+ {
+-	v3s16 extent(114, 80, 256);
++	v3s32 extent(114, 80, 256);
+ 	u32 i = 4;
+ 	VoxelArea::add_z(extent, i, 8);
+ 	UASSERTEQ(u32, i, 72964)
+@@ -412,7 +421,7 @@ void TestVoxelArea::test_add_z()
+ 
+ void TestVoxelArea::test_add_p()
+ {
+-	v3s16 extent(33, 14, 742);
++	v3s32 extent(33, 14, 742);
+ 	v3s16 a(15, 12, 369);
+ 	u32 i = 4;
+ 	VoxelArea::add_p(extent, i, a);
+diff --git a/src/voxel.cpp b/src/voxel.cpp
+index b0a63b4f010cb..8f3858a1f0ec6 100644
+--- a/src/voxel.cpp
++++ b/src/voxel.cpp
+@@ -38,7 +38,7 @@ void VoxelManipulator::clear()
+ void VoxelManipulator::print(std::ostream &o, const NodeDefManager *ndef,
+ 	VoxelPrintMode mode) const
+ {
+-	const v3s16 &em = m_area.getExtent();
++	auto &em = m_area.getExtent();
+ 	v3s16 of = m_area.MinEdge;
+ 	o<<"size: "<<em.X<<"x"<<em.Y<<"x"<<em.Z
+ 	 <<" offset: ("<<of.X<<","<<of.Y<<","<<of.Z<<")"<<std::endl;
+@@ -137,7 +137,7 @@ void VoxelManipulator::addArea(const VoxelArea &area)
+ 		new_area.addArea(area);
+ 	}
+ 
+-	s32 new_size = new_area.getVolume();
++	u32 new_size = new_area.getVolume();
+ 
+ 	// Allocate new data and clear flags
+ 	MapNode *new_data = new MapNode[new_size];
+@@ -147,7 +147,7 @@ void VoxelManipulator::addArea(const VoxelArea &area)
+ 	memset(new_flags, VOXELFLAG_NO_DATA, new_size);
+ 
+ 	// Copy old data
+-	s32 old_x_width = m_area.MaxEdge.X - m_area.MinEdge.X + 1;
++	u32 old_x_width = m_area.getExtent().X;
+ 	for(s32 z=m_area.MinEdge.Z; z<=m_area.MaxEdge.Z; z++)
+ 	for(s32 y=m_area.MinEdge.Y; y<=m_area.MaxEdge.Y; y++)
+ 	{
+diff --git a/src/voxel.h b/src/voxel.h
+index a2b725385f97b..a35be3e193123 100644
+--- a/src/voxel.h
++++ b/src/voxel.h
+@@ -109,21 +109,20 @@ class VoxelArea
+ 		const methods
+ 	*/
+ 
+-	const v3s16 &getExtent() const
++	const v3s32 &getExtent() const
+ 	{
+ 		return m_cache_extent;
+ 	}
+ 
+-	/// @note `getVolume() == 0` and `getEmptyExtent()` are not identical.
+ 	bool hasEmptyExtent() const
+ 	{
+-		// FIXME: shouldn't this actually be a component-wise check?
+-		return m_cache_extent == v3s16(0,0,0);
++		return !m_cache_extent.X || !m_cache_extent.Y || !m_cache_extent.Z;
+ 	}
+ 
+-	s32 getVolume() const
++	u32 getVolume() const
+ 	{
+-		return (s32)m_cache_extent.X * (s32)m_cache_extent.Y * (s32)m_cache_extent.Z;
++		// FIXME: possible integer overflow here
++		return (u32)m_cache_extent.X * (u32)m_cache_extent.Y * (u32)m_cache_extent.Z;
+ 	}
+ 
+ 	bool contains(const VoxelArea &a) const
+@@ -149,8 +148,9 @@ class VoxelArea
+ 	}
+ 	bool contains(s32 i) const
+ 	{
+-		return (i >= 0 && i < getVolume());
++		return i >= 0 && static_cast<u32>(i) < getVolume();
+ 	}
++
+ 	bool operator==(const VoxelArea &other) const
+ 	{
+ 		return (MinEdge == other.MinEdge
+@@ -206,7 +206,7 @@ class VoxelArea
+ 		if(a.hasEmptyExtent())
+ 		{
+ 			VoxelArea b = *this;
+-			if (b.getVolume() != 0)
++			if (!b.hasEmptyExtent())
+ 				result.push_back(b);
+ 			return;
+ 		}
+@@ -215,7 +215,7 @@ class VoxelArea
+ 
+ 		const auto &take = [&result] (v3s16 min, v3s16 max) {
+ 			VoxelArea b(min, max);
+-			if (b.getVolume() != 0)
++			if (!b.hasEmptyExtent())
+ 				result.push_back(b);
+ 		};
+ 
+@@ -280,15 +280,16 @@ class VoxelArea
+ 	/**
+ 	 * Translate index in the X coordinate
+ 	 */
+-	static void add_x(const v3s16 &extent, u32 &i, s16 a)
++	static void add_x(const v3s32 &extent, u32 &i, s16 a)
+ 	{
++		(void)extent;
+ 		i += a;
+ 	}
+ 
+ 	/**
+ 	 * Translate index in the Y coordinate
+ 	 */
+-	static void add_y(const v3s16 &extent, u32 &i, s16 a)
++	static void add_y(const v3s32 &extent, u32 &i, s16 a)
+ 	{
+ 		i += a * extent.X;
+ 	}
+@@ -296,7 +297,7 @@ class VoxelArea
+ 	/**
+ 	 * Translate index in the Z coordinate
+ 	 */
+-	static void add_z(const v3s16 &extent, u32 &i, s16 a)
++	static void add_z(const v3s32 &extent, u32 &i, s16 a)
+ 	{
+ 		i += a * extent.X * extent.Y;
+ 	}
+@@ -304,7 +305,7 @@ class VoxelArea
+ 	/**
+ 	 * Translate index in space
+ 	 */
+-	static void add_p(const v3s16 &extent, u32 &i, v3s16 a)
++	static void add_p(const v3s32 &extent, u32 &i, v3s16 a)
+ 	{
+ 		i += a.Z * extent.X * extent.Y + a.Y * extent.X + a.X;
+ 	}
+@@ -329,15 +330,20 @@ class VoxelArea
+ private:
+ 	void cacheExtent()
+ 	{
+-		m_cache_extent = MaxEdge - MinEdge + v3s16(1,1,1);
++		m_cache_extent = {
++			MaxEdge.X - MinEdge.X + 1,
++			MaxEdge.Y - MinEdge.Y + 1,
++			MaxEdge.Z - MinEdge.Z + 1
++		};
+ 		// If positions were sorted correctly this must always hold.
+ 		// Note that this still permits empty areas (where MinEdge = MaxEdge + 1).
+-		assert(m_cache_extent.X >= 0);
+-		assert(m_cache_extent.Y >= 0);
+-		assert(m_cache_extent.Z >= 0);
++		assert(m_cache_extent.X >= 0 && m_cache_extent.X <= MAX_EXTENT);
++		assert(m_cache_extent.Y >= 0 && m_cache_extent.Y <= MAX_EXTENT);
++		assert(m_cache_extent.Z >= 0 && m_cache_extent.Z <= MAX_EXTENT);
+ 	}
+ 
+-	v3s16 m_cache_extent = v3s16(0,0,0);
++	static constexpr s32 MAX_EXTENT = S16_MAX - S16_MIN + 1;
++	v3s32 m_cache_extent;
+ };
+ 
+ enum : u8 {
+diff --git a/src/voxelalgorithms.cpp b/src/voxelalgorithms.cpp
+index cd26649385aca..5da39d6ed37e7 100644
+--- a/src/voxelalgorithms.cpp
++++ b/src/voxelalgorithms.cpp
+@@ -767,7 +767,7 @@ void fill_with_sunlight(MMVManip *vm, const NodeDefManager *ndef, v2s16 offset,
+ 	bool light[MAP_BLOCKSIZE][MAP_BLOCKSIZE])
+ {
+ 	// Distance in array between two nodes on top of each other.
+-	s16 ystride = vm->m_area.getExtent().X;
++	s32 ystride = vm->m_area.getExtent().X;
+ 	// Cache the ignore node.
+ 	MapNode ignore = MapNode(CONTENT_IGNORE);
+ 	// For each column of nodes:
