@@ -22,17 +22,24 @@ RUN apt-get update &&\
 
 # Fetch source
 RUN mkdir -p /usr/src &&\
-    git clone --depth=1 -b ${LUANTI_VERSION} \
+    git clone -b ${LUANTI_VERSION} \
         https://github.com/minetest/minetest \
         /usr/src/minetest &&\
     rm -rf /usr/src/minetest/.git
-RUN git clone --depth=1 https://github.com/minetest/minetest_game \
+RUN git clone https://github.com/minetest/minetest_game \
         /usr/src/minetest/games/minetest_game &&\
     git -C /usr/src/minetest/games/minetest_game checkout ${MINETEST_GAME_VERSION}
 RUN git clone \
         https://github.com/LuaJIT/LuaJIT \
         /usr/src/luajit &&\
     git -C /usr/src/luajit checkout ${LUAJIT_VERSION}
+
+# Apply patches
+ADD patches /usr/src/patches
+RUN cd /usr/src/minetest ;\
+    ls -1 /usr/src/patches/${LUANTI_VERSION}-*.patch | while read file ; do \
+        patch -p1 < $file ; \
+    done
 
 # Install Contentdb CLI
 RUN echo "Building for arch $(uname -m)" &&\
